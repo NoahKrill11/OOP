@@ -55,7 +55,7 @@ int main()
             
             parser.cDataParse();
             count["textsize"] += parser.getsize();
-            count["loc"] += std::count(parser.getCharBegin(),parser.getCharEnd(), '\n');
+            count["loc"] += std::count(parser.getCharacters().begin(),parser.getCharacters().end(), '\n');
            
         }
         

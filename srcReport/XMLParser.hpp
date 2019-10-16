@@ -42,12 +42,7 @@ public:
     //This is an inline function so its best to keep it in hpp file to get the buffer
     std::vector<char>getbuffer()
     {return buffer;}
-     
-    //This is an inline function so its best to keep it in hpp file to get the get char.begin()
-    std::vector<char>::iterator getCharBegin() { return characters.begin();}
-     
-    //This is an inline function so its best to keep it in hpp file to get the get char.end()
-    std::vector<char>::iterator getCharEnd() { return characters.end();}
+    
     size_t getsize() { return characters.size();}
   
     //Function for getting the depth value

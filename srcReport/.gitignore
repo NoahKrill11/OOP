@@ -3,3 +3,4 @@ XMLParser.o
 srcReport.o
 libxml2.xml
 srcReport
+Makefile

@@ -14,11 +14,12 @@
   
 /*
  Constructor for calling the parser
- set up vaiables for use at beggining of the program
+ variables are standard functions and will be called later in the function if need be
+ set up vaiables for use at begining of the program
 */
 
 
-xmlparser::xmlparser(std::function<void()> count) : statements(count)
+xmlparser::xmlparser(std::function<void()> count,std::function<void()> count2,std::function<void()> count3) : statements(count), statements2(count2), statements3(count3)
 {
     const int BUFFER_SIZE = 16 * 1024;
     buffer.resize(BUFFER_SIZE);
@@ -178,11 +179,9 @@ Function parses the cdata in the document
 void xmlparser::cDataParse()
 {
     const std::string endcdata = "]]>";
-    const std::string endcomment = "-->";
     auto endpc = std::search(pc, buffer.end(), endcdata.begin(), endcdata.end());
     std::advance(pc, strlen("<![CDATA["));
-    std::string temp(pc, endpc);
-    characters=temp;
+    std::string characters(pc, endpc);
     /*
     If the iterator reaches the end of the of the buffer without
     finding the relevant value something went wrong and exit with code 1
@@ -190,6 +189,8 @@ void xmlparser::cDataParse()
     if (endpc == buffer.end())
         std::exit(1);
     pc = std::next(endpc, strlen("]]>"));
+    //calling on the the std::functions that was used in the constructor
+    statements2();
 }
 
 /*
@@ -212,13 +213,10 @@ void xmlparser::endTagParse ()
     */
     if (pnameend == buffer.end())
         std::exit(1);
-    const std::string temp(pc, pnameend);
-    qname=temp;
+    const std::string qname(pc, pnameend);
     const auto colonpos = qname.find(':');
-    const std::string temp2 = colonpos != std::string::npos ? qname.substr(0, colonpos) : std::string("");
-    prefix=temp2;
-    const std::string temp3 = colonpos != std::string::npos ? qname.substr(colonpos + 1) : qname;
-    local_name=temp3;
+    const std::string prefix = colonpos != std::string::npos ? qname.substr(0, colonpos) : std::string("");
+    const std::string local_name = colonpos != std::string::npos ? qname.substr(colonpos + 1) : qname;
     pc = std::next(endpc);
     --depth;
 }
@@ -245,14 +243,14 @@ void xmlparser::startTagParse()
     */
     if (pnameend == buffer.end())
        exit(1);
-    const std::string temp(pc, pnameend);
-    qname=temp;
+    const std::string qname(pc, pnameend);
     const auto colonpos = qname.find(':');
     prefix = colonpos != std::string::npos ? qname.substr(0, colonpos) : std::string("");
     local_name = colonpos != std::string::npos ? qname.substr(colonpos + 1) : qname;
     pc = pnameend;
     pc = std::find_if_not(pc, buffer.end(), [] (char c) { return std::isspace(c); });
     intag = true;
+    //calling on the the std::functions that was used in the constructor
     statements();
 }
 
@@ -269,8 +267,7 @@ void xmlparser::attParse()
       */
     if (pnameend == buffer.end())
         std::exit(1);
-    const std::string temp(pc, pnameend);
-    qname = temp;
+    const std::string qname(pc, pnameend);
     const auto colonpos = qname.find(':');
     prefix = colonpos != std::string::npos ? qname.substr(0, colonpos) : std::string("");
     local_name = colonpos != std::string::npos ? qname.substr(colonpos + 1) : qname;
@@ -302,7 +299,8 @@ void xmlparser::attParse()
     value=temp2;
     pc = std::next(pvalueend);
     pc = std::find_if_not(pc, buffer.end(), [] (char c) { return std::isspace(c); });
-  
+    //calling on the the std::functions that was used in the constructor
+  statements3();
 }
 
 /*
@@ -353,8 +351,7 @@ void xmlparser::namespaceParse()
       */
     if (pvalueend == buffer.end())
         std::exit(1);
-    const std::string temp(pc, pvalueend);
-    uri=temp;
+    const std::string uri(pc, pvalueend);
     pc = std::next(pvalueend);
     pc = std::find_if_not(pc, buffer.end(), [] (char c) { return std::isspace(c); });
 }
@@ -397,6 +394,7 @@ void xmlparser::charcterParse()
             }
         }
     }
+    
 }
 
 /*

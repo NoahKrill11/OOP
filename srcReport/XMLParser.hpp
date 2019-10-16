@@ -25,11 +25,15 @@ private:
     std::string value;
     std::string uri;
     std::function<void()> statements;
+    std::function<void()> statements2;
+    std::function<void()> statements3;
+    
+
     
 public:
     
-     //Constructor for calling the parser
-    xmlparser(std::function<void()> count);
+     //Constructor for calling the parser with std::functions as variables
+    xmlparser(std::function<void()>, std::function<void()>,std::function<void()>);
 
      //Deconstructor
     ~xmlparser();

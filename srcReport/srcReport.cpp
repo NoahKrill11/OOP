@@ -16,14 +16,31 @@ int main()
     long total = 0;
     //xmlparser parser;
     std::unordered_map<std::string,int> count{};
-    xmlparser parser([&]() -> void {
+    
+    /*
+     creating an object with the use of Lambdas
+     Lambdas are anonymous fuctions that will be called if the functions in the other files need them
+     They do all the parsing outside of srcreport while keeping the srcML varibles inside
+     */
+    xmlparser parser(
+    //creating a lambda function that returns void and only passes in the map "count" and the object "parser"
+    [&count, &parser]() -> void {
     if (parser.getLocal_name() == "unit" && parser.getdepth() > 1)
         ++count["file"];
     else if (parser.getLocal_name() != "block" && parser.getLocal_name() != "file")
         ++count[parser.getLocal_name()];
-    }
-    );
-    
+    },
+        [&count,&parser]()->void
+    {
+        count["textsize"] += parser.getsize();
+        count["loc"] += std::count(parser.getCharacters().begin(),parser.getCharacters().end(), '\n');
+    },
+        [&count, &parser]()->void
+    {
+        if (parser.getvalue() == "block")
+        ++count["block"];
+    });
+
     while (parser.getNumbytes() !=0)
     {
         if (parser.bufferCheck())
@@ -54,9 +71,6 @@ int main()
             // parse CDATA
             
             parser.cDataParse();
-            count["textsize"] += parser.getsize();
-            count["loc"] += std::count(parser.getCharacters().begin(),parser.getCharacters().end(), '\n');
-           
         }
         
         else if (parser.endTagCheck())
@@ -98,8 +112,6 @@ int main()
         {
             // parse attribute
             parser.attParse();
-           if (parser.getvalue() == "block")
-               ++count["block"];
             
         }
         
@@ -107,16 +119,15 @@ int main()
         {
              // parse characters
        parser.charcterParse();
+            if (*parser.getpcur() != '&')
+                {
+                    std::string characters(parser.getpcur(), parser.getpc());
+                    count["loc"] += std::count(characters.begin(), characters.end(), '\n');
+                }
+            else
+                ++count["textsize"];
        //adjust values, this if/else is for the sole purpose of decoupling
-       if (*parser.getpcur() != '&')
-           {
-               std::string characters(parser.getpcur(), parser.getpc());
-               count["loc"] += std::count(characters.begin(), characters.end(), '\n');
-           }
-       else
-           ++count["textsize"];
-        }
-         
+    }
     }
     
     std::cout << "bytes: " << total << '\n';

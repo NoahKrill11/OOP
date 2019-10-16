@@ -2,136 +2,134 @@
     srcReport.cpp
 
     Produces a report that counts the number of statements, declarations, etc. of C++ programs
-
-    Input is a srcML form of the code.
-
-    Note: Does not handle XML comments
 */
 
 #include <iostream>
 #include <iterator>
 #include <string>
-#include <cstring>
-#include <sys/types.h>
-#include <sys/uio.h>
-#include <unistd.h>
-#include <errno.h>
 #include <vector>
-#include <algorithm>
-#include <ctype.h>
 #include "XMLParser.hpp"
-
-const int BUFFER_SIZE = 16 * 1024;
+#include <unordered_map>
 
 int main()
 {
-    int textsize = 0;
-    int loc = 0;
-    int expr_count = 0;
-    int function_count = 0;
-    int class_count = 0;
-    int file_count = 0;
-    int decl_count = 0;
-    int comment_count = 0;
-    int depth = 0;
     long total = 0;
-    int return_count=0;
-    int block_count=0;
-    bool intag = false;
-    std::vector<char> buffer(BUFFER_SIZE);
-    std::vector<char>::iterator pc = buffer.end();
-    ssize_t numbytes = -1;
-    while (numbytes !=0)
+    //xmlparser parser;
+    std::unordered_map<std::string,int> count{};
+    xmlparser parser([&]() -> void {
+    if (parser.getLocal_name() == "unit" && parser.getdepth() > 1)
+        ++count["file"];
+    else if (parser.getLocal_name() != "block" && parser.getLocal_name() != "file")
+        ++count[parser.getLocal_name()];
+    }
+    );
+    
+    while (parser.getNumbytes() !=0)
     {
-        if (bufferCheck(buffer.end(),pc,intag))
+        if (parser.bufferCheck())
         {
             // fill the buffer
-            fillTheBuffer(buffer, pc, numbytes, BUFFER_SIZE,total);
+           parser.fillTheBuffer();
+
+            total+=parser.getNumbytes();
         }
-        else if (declarationCheck(pc))
+        
+        else if (parser.declarationCheck())
         {
             // parse XML declaration
-            declartionParse(buffer.end(), pc);
+        
+            parser.declartionParse();
         }
-        else if (commentCheck(pc))
+        
+
+        else if (parser.commentCheck())
         {
             // parse XML comment
-            commentParse(buffer.end(), pc);
+           
+            parser.commentParse();
         }
-        else if (cDataCheck(pc))
+        
+        else if (parser.cDataCheck())
         {
             // parse CDATA
-            cDataParse(buffer.end(), pc,textsize,loc);
+            
+            parser.cDataParse();
+            count["textsize"] += parser.getsize();
+            count["loc"] += std::count(parser.getCharBegin(),parser.getCharEnd(), '\n');
+           
         }
-        else if (endTagCheck(pc))
+        
+        else if (parser.endTagCheck())
         {
             // parse end tag
-            std::string qname, prefix, local_name;
-            endTagParse(pc, buffer.end(), depth, qname, prefix, local_name);
+   
+            parser.endTagParse();
         }
-        else if (startTagCheck(pc))
+        
+        else if (parser.startTagCheck())
         {
             // parse start tag
-            std::string local_name;
-            std::string prefix, qname;
-            startTagParse(buffer.end(),pc, depth, local_name, prefix,qname);
-            if (local_name == "expr")
-                ++expr_count;
-            else if (local_name == "function")
-                ++function_count;
-            else if (local_name == "decl")
-                ++decl_count;
-            else if (local_name == "class")
-                ++class_count;
-            else if (local_name == "unit" && depth > 1)
-                ++file_count;
-            else if (local_name == "comment")
-                ++comment_count;
-            else if (local_name == "return" )
-                ++return_count;
-            intag = true;
+        
+            parser.startTagParse();
+            
         }
-        else if (endStartTagCheck(pc, intag))
+       
+        else if (parser.endStartTagCheck())
         {
             // end start tag
-            endStartTag(pc, intag);
+         
+            parser.endStartTag();
         }
-        else if (emptyElementCheck(pc,intag))
+        
+        else if (parser.emptyElementCheck())
         {
             // end empty element
-            emptyElement(pc, intag);
+            parser.emptyElement();
         }
-        else if (namespaceCheck(intag, buffer.end(),pc))
+        
+        else if (parser.namespaceCheck())
         {
             // parse namespace
-            std::string uri,prefix;
-            namespaceParse(pc, buffer.end(),uri,prefix);
+           
+            parser.namespaceParse();
         }
-        else if (attCheck(intag, pc))
+        
+        else if (parser.attCheck())
         {
             // parse attribute
-            std::string local_name, prefix, value, qname;
+            parser.attParse();
+           if (parser.getvalue() == "block")
+               ++count["block"];
             
-            attParse(buffer.end(), pc, local_name, prefix, value, qname);
-           if (value == "block")
-               ++block_count;
         }
+        
         else
         {
-            //parse the rest of the characters
-            charcterParse(pc, buffer.end(), depth, loc, textsize);
+             // parse characters
+       parser.charcterParse();
+       //adjust values, this if/else is for the sole purpose of decoupling
+       if (*parser.getpcur() != '&')
+           {
+               std::string characters(parser.getpcur(), parser.getpc());
+               count["loc"] += std::count(characters.begin(), characters.end(), '\n');
+           }
+       else
+           ++count["textsize"];
         }
+         
     }
+    
     std::cout << "bytes: " << total << '\n';
-    std::cout << "files: " << file_count << '\n';
-    std::cout << "LOC: " << loc << '\n';
-    std::cout << "source characters: " << textsize << '\n';
-    std::cout << "classes: " << class_count << '\n';
-    std::cout << "functions: " << function_count << '\n';
-    std::cout << "declarations: " << decl_count << '\n';
-    std::cout << "expressions: " << expr_count << '\n';
-    std::cout << "comments: " << comment_count << '\n';
-    std::cout << "returns: " << return_count << '\n';
-    std::cout << "block comments "<< block_count <<'\n';
+    std::cout << "files: " << count["file"] << '\n';
+    std::cout << "LOC: " << count["loc"] << '\n';
+    std::cout << "source characters: " << count["textsize"] << '\n';
+    std::cout << "classes: " << count["class"] << '\n';
+    std::cout << "functions: " << count["function"] << '\n';
+    std::cout << "declarations: " << count["decl"] << '\n';
+    std::cout << "expressions: " << count["expr"] << '\n';
+    std::cout << "comments: " << count["comment"] << '\n';
+    std::cout << "returns: " << count["return"] << '\n';
+    std::cout << "block comments "<< count["block"] <<'\n';
     return 0;
 }
+

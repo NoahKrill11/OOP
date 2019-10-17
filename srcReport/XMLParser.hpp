@@ -11,33 +11,83 @@
 class xmlparser
 {
 private:
-    int depth = 0;
-    bool intag = false;
-    ssize_t numbytes = -1;
+    //Private variables for use in functions
+    int depth;
+    bool intag;
+    ssize_t numbytes;
     std::vector<char>::iterator pc;
+    std::vector<char>::iterator pcur;
     std::vector<char> buffer;
-    
+    std::string qname;
+    std::string prefix;
+    std::string local_name;
+    std::string characters;
+    std::string value;
+    std::string uri;
+    std::function<void()> cData;
+    std::function<void()> local;
+    std::function<void()> attribute;
+    std::function<void()> loc;
+    std::function<void()> sourceChar;
+
 public:
-    /*Constructor for calling the parser
-     @param BUFFERSIZE is the constant value of how big the buffer is
-     */
-    xmlparser();
     
-    /* Deconstructor*/
+     //Constructor for calling the parser with std::functions as variables
+    xmlparser(std::function<void()>, std::function<void()>, std::function<void()>, std::function<void()>, std::function<void()>);
+
+     //Deconstructor
     ~xmlparser();
     
     //Function for getting pc value
-    //This is an inline function so its best to keep it in hpp file
     std::vector<char>::iterator getpc()
-    {return pc;}
+    {
+        return pc;
+    }
+     
+    //This is an inline function so its best to keep it in hpp file to get the buffer
+    std::vector<char>getbuffer()
+    {
+        return buffer;
+    }
     
+    size_t getsize() { return characters.size();}
+  
     //Function for getting the depth value
     int getdepth()
-    {return depth;}
+    {
+        return depth;
+    }
     
     //Function for returning the numbytes value
     ssize_t getNumbytes()
-    {return numbytes;}
+    
+    {
+        return numbytes;
+    }
+    
+    //Function for returning the local name
+    std::string getLocal_name()
+    {
+        return local_name;
+    }
+    
+    //Function for returning the characters
+    std::string getCharacters()
+    {
+        return characters;
+    }
+    
+    //Function for returning the pcur
+   std::vector<char>::iterator getpcur()
+    {
+        return pcur;
+    }
+    
+    //Function for returning the value
+    std::string getvalue()
+    {
+        return value;
+    }
     
     //Function for checking if the conditions are met to fill the buffer
     bool bufferCheck();
@@ -79,22 +129,22 @@ public:
     void commentParse();
 
     //Function for parsing the cdata in the document
-    void cDataParse(std::string&);
+    void cDataParse();
 
     //Function for parsing the end tags in the document
-    void endTagParse(std::string&, std::string&, std::string&);
+    void endTagParse();
 
     //Function for parsing the start tags in the document
-    void startTagParse(std::string&, std::string&, std::string&);
+    void startTagParse();
 
     //Function for parsing the atributes in the document
-    void attParse(std::string&,std::string&,std::string&,std::string&);
+    void attParse();
 
     //Function for parsing the characters in the document
-    void charcterParse(std::vector<char>::iterator&);
+    void charcterParse();
 
     //Function for parsing the namespace in the document
-    void namespaceParse(std::string&, std::string&);
+    void namespaceParse();
 
     //Function for parsing the empty elements in the document
     void emptyElement();

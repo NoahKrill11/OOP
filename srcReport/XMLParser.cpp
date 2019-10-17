@@ -11,31 +11,30 @@
 #include <unistd.h>
 #include <vector>
 #include "XMLParser.hpp"
-  /*Constructor for calling the parser
-   @param BUFFERSIZE is the constant value of how big the buffer is
-   */
-
-xmlparser::xmlparser()
+  
+/*
+ Constructor for calling the parser
+ variables are standard functions and will be called later in the function if need be
+ set up vaiables for use at begining of the program
+*/
+xmlparser::xmlparser(std::function<void()> count,std::function<void()> count2,std::function<void()> count3,
+                     std::function<void()> count4, std::function<void()> count5) : cData(count), local(count2),
+                    attribute(count3), loc(count4), sourceChar(count5)
 {
-  const int BUFFER_SIZE = 16 * 1024;
-  buffer.resize(BUFFER_SIZE);
-  depth = 0;
-  intag=false;
-  numbytes = -1;
-  pc=buffer.end();
+    const int BUFFER_SIZE = 16 * 1024;
+    buffer.resize(BUFFER_SIZE);
+    depth = 0;
+    intag=false;
+    numbytes = -1;
+    pc=buffer.end();
 }
+
+
 //Deconstructor to deconstruct the parser
   xmlparser::~xmlparser()
-{
-    buffer.resize(0);
-}
+{}
 
-/*
- Function for checking if the conditions are met to fill the buffer
- @param endbuffer; iterator to the end position of the buffer
- @param pc; iterator stored to current spot
- @param intag; boolen that determines if we parsing something inside of the tag
- */
+//Function for checking if the conditions are met to fill the buffer
 bool xmlparser::bufferCheck()
 {
     return (pc == buffer.end() ||
@@ -43,88 +42,63 @@ bool xmlparser::bufferCheck()
     (!intag && *pc == '&' && std::distance(pc, buffer.end()) <= strlen("&amp;")) ||
             (!intag && *pc == '<' && std::distance(pc, buffer.end()) > 1 && *std::next(pc) == '!'));
 }
-/*
-Function for checking if the conditions are met to parse the declaration
-@param pc; iterator stored to current spot
-*/
+
+
+//Function for checking if the conditions are met to parse the declaration
 bool xmlparser::declarationCheck()
 {
     return (*pc == '<' && *std::next(pc) == '?');
 }
-/*
-Function for checking if the conditions are met to parse the comments
-@param pc; iterator stored to current spot
-*/
+//Function for checking if the conditions are met to parse the comments
 bool xmlparser::commentCheck()
 {
     return (*pc == '<' && *std::next(pc) == '!' && *std::next(pc, 2) == '-' && *std::next(pc, 3) == '-');
 }
-/*
-Function for checking if the conditions are met to parse the cdatas
-@param pc; iterator stored to current spot
-*/
+
+//Function for checking if the conditions are met to parse the cdata
 bool xmlparser::cDataCheck()
 {
     return (*pc == '<' && *std::next(pc) == '!' && *std::next(pc, 2) == '[');
 }
-/*
-Function for checking if the conditions are met to parse the namespaces
-@param endbuffer; iterator to the end position of the buffer
-@param pc; iterator stored to current spot
-@param intag; boolen that determines if we parsing something inside of the tag
-*/
+
+//Function for checking if the conditions are met to parse the namespaces
 bool xmlparser::namespaceCheck()
 {
    return (intag && *pc != '>' && *pc != '/' && std::distance(pc, buffer.end()) > strlen("xmlns") && std::string(pc, std::next(pc, strlen("xmlns"))) == "xmlns"
       && (*std::next(pc, strlen("xmlns")) == ':' || *std::next(pc, strlen("xmlns")) == '='));
 }
-/*
-Function for checking if the conditions are met to parse the start tags
-@param pc; iterator stored to current spot
-*/
+
+//Function for checking if the conditions are met to parse the start tags
 bool xmlparser::startTagCheck()
 {
     return (*pc == '<' && *std::next(pc) != '/' && *std::next(pc) != '?');
 }
-/*
-Function for checking if the conditions are met to parse the end tags
-@param pc; iterator stored to current spot
-*/
+
+//Function for checking if the conditions are met to parse the end tags
 bool xmlparser::endTagCheck()
 {
     return (*pc == '<' && *std::next(pc) == '/');
-    
 }
-/*
-Function for checking if the conditions are met to parse the empty elements
-@param pc; iterator stored to current spot
-@param intag; boolen that determines if we parsing something inside of the tag
-*/
+
+//Function for checking if the conditions are met to parse the empty elements
 bool xmlparser::emptyElementCheck()
 {
     return (intag && *pc == '/' && *std::next(pc) == '>');
 }
-/*
-Function for checking if the conditions are met to parse the attributes
-@param pc; iterator stored to current spot
-@param intag; boolen that determines if we parsing something inside of the tag
-*/
+
+//Function for checking if the conditions are met to parse the attributes
 bool xmlparser::attCheck()
 {
     return (intag && *pc != '>' && *pc != '/');
 }
-/*
-Function for checking if the conditions are met to parse the end of the start tag
-@param pc iterator stored to current spot
-@param intag boolen that determines if we parsing something inside of the tag
-*/
+
+//Function for checking if the conditions are met to parse the end of the start tag
 bool xmlparser::endStartTagCheck()
 {
     return (intag && *pc == '>');
 }
-/*
- Function fills the buffer
- */
+
+//Function fills the buffer
 void xmlparser::fillTheBuffer()
 {
     auto d = std::distance(pc, buffer.end());
@@ -141,11 +115,8 @@ void xmlparser::fillTheBuffer()
     pc = buffer.begin();
     
 }
-/*
-Function parses the declarations in the document
-@param endbuffer; iterator to the end position of the buffer
-@param pc; iterator stored to current spot
-*/
+
+//Function parses the declarations in the document
 void xmlparser::declartionParse()
 {
     auto endpc = std::find(pc, buffer.end(), '>');//finds the end tag
@@ -158,11 +129,8 @@ void xmlparser::declartionParse()
     if (endpc == buffer.end())
         std::exit(1);
 }
-  /*
-  Function parses the comments in the document
-  @param endbuffer; iterator to the end position of the buffer
-  @param pc; iterator stored to current spot
-  */
+
+//Function parses the comments in the document
 void xmlparser::commentParse()
 {
     const std::string endcomment = "-->";
@@ -176,21 +144,14 @@ void xmlparser::commentParse()
         std::exit(1);
     pc = std::find_if_not(pc, buffer.end(), [] (char c) { return std::isspace(c); });
 }
-/*
-Function parses the cdata in the document
-@param endbuffer; iterator to the end position of the buffer
-@param pc; iterator stored to current spot
-@param characters; charaters being parsed
 
-*/
-void xmlparser::cDataParse(std::string &characters)
+//Function parses the cdata in the document
+void xmlparser::cDataParse()
 {
     const std::string endcdata = "]]>";
-    const std::string endcomment = "-->";
     auto endpc = std::search(pc, buffer.end(), endcdata.begin(), endcdata.end());
     std::advance(pc, strlen("<![CDATA["));
-    std::string temp(pc, endpc);
-    characters=temp;
+    std::string characters(pc, endpc);
     /*
     If the iterator reaches the end of the of the buffer without
     finding the relevant value something went wrong and exit with code 1
@@ -198,17 +159,12 @@ void xmlparser::cDataParse(std::string &characters)
     if (endpc == buffer.end())
         std::exit(1);
     pc = std::next(endpc, strlen("]]>"));
+    //calling on the the std::functions that was used in the constructor
+    cData();
 }
-/*
-Function parses the end tags in the document
-@param endbuffer; iterator to the end position of the buffer
-@param pc; iterator stored to current spot
-@param depth; int number of tags within the code
-@param qname; string is a qulified name for an attribute, or tag
-@param prefix; string that catches all of the prefixes in the document
-@param local_name; string that stores the type of local name used
-*/
-void xmlparser::endTagParse (std::string &qname, std::string &prefix ,std::string &local_name)
+
+//Function parses the end tags in the document
+void xmlparser::endTagParse ()
 {
     auto endpc = std::find(pc, buffer.end(), '>');
     /*
@@ -225,26 +181,16 @@ void xmlparser::endTagParse (std::string &qname, std::string &prefix ,std::strin
     */
     if (pnameend == buffer.end())
         std::exit(1);
-    const std::string temp(pc, pnameend);
-    qname=temp;
+    const std::string qname(pc, pnameend);
     const auto colonpos = qname.find(':');
-    const std::string temp2 = colonpos != std::string::npos ? qname.substr(0, colonpos) : std::string("");
-    prefix=temp2;
-    const std::string temp3 = colonpos != std::string::npos ? qname.substr(colonpos + 1) : qname;
-    local_name=temp3;
+    const std::string prefix = colonpos != std::string::npos ? qname.substr(0, colonpos) : std::string("");
+    const std::string local_name = colonpos != std::string::npos ? qname.substr(colonpos + 1) : qname;
     pc = std::next(endpc);
     --depth;
 }
-/*
-Function parses start tags in the document
-@param endbuffer; iterator to the end position of the buffer
-@param pc; iterator stored to current spot
-@param depth; int number of tags within the code
-@param local_name; string that stores the type of local name used
-@param prefix; string that catches all of the prefixes in the document
-@param qname; string is a qulified name for an attribute, or tag
-*/
-void xmlparser::startTagParse(std::string &local_name, std::string &prefix, std::string &qname)
+
+//Function parses start tags in the document
+void xmlparser::startTagParse()
 {
     auto endpc = std::find(pc, buffer.end(), '>');
     /*
@@ -263,25 +209,21 @@ void xmlparser::startTagParse(std::string &local_name, std::string &prefix, std:
     */
     if (pnameend == buffer.end())
        exit(1);
-    const std::string temp(pc, pnameend);
-    qname=temp;
+    const std::string qname(pc, pnameend);
     const auto colonpos = qname.find(':');
     prefix = colonpos != std::string::npos ? qname.substr(0, colonpos) : std::string("");
     local_name = colonpos != std::string::npos ? qname.substr(colonpos + 1) : qname;
     pc = pnameend;
     pc = std::find_if_not(pc, buffer.end(), [] (char c) { return std::isspace(c); });
     intag = true;
+    //calling on the the std::functions that was used in the constructor
+    local();
 }
-/*
-Function parses the attributes in the document
-@param endbuffer; iterator to the end position of the buffer
-@param pc; iterator stored to current spot
-@param local_name; string that stores the type of local name used
-@param prefix; string that catches all of the prefixes in the document
-@param qname; string is a qulified name for an attribute, or tag
-*/
-void xmlparser::attParse(std::string &local_name, std::string &prefix, std::string &value, std::string &qname)
+
+//Function parses the attributes in the document
+void xmlparser::attParse()
 {
+  
     auto pnameend = std::find(pc, buffer.end(), '=');
     /*
       If the iterator reaches the end of the of the buffer without
@@ -289,8 +231,7 @@ void xmlparser::attParse(std::string &local_name, std::string &prefix, std::stri
       */
     if (pnameend == buffer.end())
         std::exit(1);
-    const std::string temp(pc, pnameend);
-    qname = temp;
+    const std::string qname(pc, pnameend);
     const auto colonpos = qname.find(':');
     prefix = colonpos != std::string::npos ? qname.substr(0, colonpos) : std::string("");
     local_name = colonpos != std::string::npos ? qname.substr(colonpos + 1) : qname;
@@ -322,16 +263,12 @@ void xmlparser::attParse(std::string &local_name, std::string &prefix, std::stri
     value=temp2;
     pc = std::next(pvalueend);
     pc = std::find_if_not(pc, buffer.end(), [] (char c) { return std::isspace(c); });
-  
+    //calling on the the std::functions that was used in the constructor
+    attribute();
 }
-/*
-Function parses the namespace in the document
-@param pc; iterator stored to current spot
-@param endbuffer; iterator to the end position of the buffer
-@param ufi; string catches Uniform Resource Identifiers
-@param prefix; string that catches all of the prefixes in the document
-*/
-void xmlparser::namespaceParse(std::string &uri, std::string &prefix)
+
+//Function parses the namespace in the document
+void xmlparser::namespaceParse()
 {
     std::advance(pc, strlen("xmlns"));
     auto pnameend = std::find(pc, buffer.end(), '=');
@@ -376,29 +313,23 @@ void xmlparser::namespaceParse(std::string &uri, std::string &prefix)
       */
     if (pvalueend == buffer.end())
         std::exit(1);
-    const std::string temp(pc, pvalueend);
-    uri=temp;
+    const std::string uri(pc, pvalueend);
     pc = std::next(pvalueend);
     pc = std::find_if_not(pc, buffer.end(), [] (char c) { return std::isspace(c); });
 }
- /*
- Function parses the characters in the document
- @param pc; iterator stored to current spot
- @param endbuffer; iterator to the end position of the buffer
- @param depth; int number of tags within the code
- @param characters; charaters being parsed
- @param textsize; int number of source characters
- */
-void xmlparser::charcterParse(std::vector<char>::iterator& pcur)
+ 
+//Function parses the characters in the document
+void xmlparser::charcterParse()
 {
     pcur = pc;
     pc = std::find_if(pc, buffer.end(), [](char c) { return c == '<' || c == '&'; });
 
     if (depth > 0)
     {
-        std::string characters;
         if (*pcur != '&')
         {
+             //calling on the the std::functions that was used in the constructor
+            loc();
             return;
         }
         else
@@ -423,24 +354,20 @@ void xmlparser::charcterParse(std::vector<char>::iterator& pcur)
                 characters += '&';
                 std::advance(pc, 1);
             }
+             //calling on the the std::functions that was used in the constructor
+            sourceChar();
         }
     }
 }
-/*
-Function parses the empty elements in the document
-@param pc; iterator stored to current spot
-@param intag; boolen that determines if we parsing something inside of the tag
-*/
+
+//Function parses the empty elements in the document
 void xmlparser::emptyElement()
 {
     std::advance(pc, 2);
     intag=false;
 }
-/*
-Function parses the end of the start tags in the document
-@param pc; iterator stored to current spot
-@param intag; boolen that determines if we parsing something inside of the tag
-*/
+
+//Function parses the end of the start tags in the document
 void xmlparser::endStartTag()
 {
     std::advance(pc, 1);

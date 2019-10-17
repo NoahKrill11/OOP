@@ -9,21 +9,55 @@
 #include <string>
 #include <vector>
 #include "XMLParser.hpp"
+#include <unordered_map>
 
 int main()
 {
-    int textsize = 0;
-    int loc = 0;
-    int expr_count = 0;
-    int function_count = 0;
-    int class_count = 0;
-    int file_count = 0;
-    int decl_count = 0;
-    int comment_count = 0;
     long total = 0;
-    int return_count=0;
-    int block_count=0;
-    xmlparser parser;
+    std::unordered_map<std::string,int> count{};
+    /*
+     creating an object with the use of Lambdas
+     Lambdas are anonymous fuctions that will be called if the functions in the other files need them
+     They do all the parsing outside of srcreport while keeping the srcML varibles inside
+     */
+    xmlparser parser(
+    //creating a lambda function that returns void and only passes in the map "count" and the object "parser"
+        [&count,&parser]()->void
+    {
+        //counting the source characters and the lines of code with the use of a lambda functions and maps
+        count["textsize"] += parser.getsize();
+        count["loc"] += std::count(parser.getCharacters().begin(),parser.getCharacters().end(), '\n');
+    },
+     [&count, &parser]() -> void {
+     //counting the local names with the use of a lambda functions and maps
+     if (parser.getLocal_name() == "unit" && parser.getdepth() > 1)
+         ++count["file"];
+     else if (parser.getLocal_name() != "block" && parser.getLocal_name() != "file")
+         ++count[parser.getLocal_name()];
+    },
+    [&count,&parser]()->void
+    {
+        //counting the attributes names with the use of a lambda functions and maps
+        if (parser.getvalue() == "block")
+        ++count["block"];
+        
+    },
+    [&count,&parser]()->void
+     {
+    if (*parser.getpcur() != '&')
+    {
+        //counting the lines of code with the use of a lambda functions and maps
+        std::string characters(parser.getpcur(), parser.getpc());
+        count["loc"] += std::count(characters.begin(), characters.end(), '\n');
+    }
+    },
+    [&count,&parser]()->void
+     {
+        //counting the source characters with the use of a lambda functions and maps
+         ++count["textsize"];
+    }
+    );
+
     while (parser.getNumbytes() !=0)
     {
         if (parser.bufferCheck())
@@ -39,6 +73,7 @@ int main()
             parser.declartionParse();
         }
         
+
         else if (parser.commentCheck())
         {
             // parse XML comment
@@ -48,95 +83,65 @@ int main()
         else if (parser.cDataCheck())
         {
             // parse CDATA
-            std::string characters;
-            parser.cDataParse(characters);
-            loc += std::count(characters.begin(), characters.end(), '\n');
-            textsize += characters.size();
+            parser.cDataParse();
         }
         
         else if (parser.endTagCheck())
         {
-            // parse end tag
-            std::string qname, prefix, local_name;
-            parser.endTagParse(qname, prefix, local_name);
+            //parse end tag
+            parser.endTagParse();
         }
         
         else if (parser.startTagCheck())
         {
-            // parse start tag
-            std::string local_name, prefix, qname;
-            parser.startTagParse(local_name, prefix, qname);
-            if (local_name == "expr")
-                ++expr_count;
-            else if (local_name == "function")
-                ++function_count;
-            else if (local_name == "decl")
-                ++decl_count;
-            else if (local_name == "class")
-                ++class_count;
-            else if (local_name == "unit" && parser.getdepth() > 1)
-                ++file_count;
-            else if (local_name == "comment")
-                ++comment_count;
-            else if (local_name == "return" )
-                ++return_count;
+            //parse start tag
+            parser.startTagParse();
+            
         }
        
         else if (parser.endStartTagCheck())
         {
-            // end start tag
+            //end start tag
             parser.endStartTag();
         }
         
         else if (parser.emptyElementCheck())
         {
-            // end empty element
+            //end empty element
             parser.emptyElement();
         }
         
         else if (parser.namespaceCheck())
         {
-            // parse namespace
-            std::string uri, prefix;
-            parser.namespaceParse(uri, prefix);
+            //parse namespace
+           
+            parser.namespaceParse();
         }
         
         else if (parser.attCheck())
         {
-            // parse attribute
-            std::string local_name, prefix, value, qname;
-            parser.attParse(local_name, prefix, value, qname);
-           if (value == "block")
-               ++block_count;
+            //parse attribute
+            parser.attParse();
         }
         
         else
         {
-             // parse characters
-       std::vector<char>::iterator pcur;
-       parser.charcterParse(pcur);
-       //adjust values, this if/else is for the sole purpose of decoupling
-       if (*pcur != '&')
-           {
-               std::string characters(pcur, parser.getpc());
-               loc += std::count(characters.begin(), characters.end(), '\n');
-           }
-       else
-           ++textsize;
+        //parse characters
+            parser.charcterParse();
         }
     }
     
     std::cout << "bytes: " << total << '\n';
-    std::cout << "files: " << file_count << '\n';
-    std::cout << "LOC: " << loc << '\n';
-    std::cout << "source characters: " << textsize << '\n';
-    std::cout << "classes: " << class_count << '\n';
-    std::cout << "functions: " << function_count << '\n';
-    std::cout << "declarations: " << decl_count << '\n';
-    std::cout << "expressions: " << expr_count << '\n';
-    std::cout << "comments: " << comment_count << '\n';
-    std::cout << "returns: " << return_count << '\n';
-    std::cout << "block comments "<< block_count <<'\n';
-    
+    std::cout << "files: " << count["file"] << '\n';
+    std::cout << "LOC: " << count["loc"] << '\n';
+    std::cout << "source characters: " << count["textsize"] << '\n';
+    std::cout << "classes: " << count["class"] << '\n';
+    std::cout << "functions: " << count["function"] << '\n';
+    std::cout << "declarations: " << count["decl"] << '\n';
+    std::cout << "expressions: " << count["expr"] << '\n';
+    std::cout << "comments: " << count["comment"] << '\n';
+    std::cout << "returns: " << count["return"] << '\n';
+    std::cout << "block comments "<< count["block"] <<'\n';
     return 0;
 }
+

@@ -1,3 +1,9 @@
+/*
+    XMLParser.hpp
+    
+    Defining the the free functions for use in other cpp files
+*/
+
 #include<iostream>
 #ifndef XMLPARSER
 #define XMLPARSER
@@ -41,19 +47,19 @@ void declartionParse(std::vector<char>::iterator, std::vector<char>::iterator&);
 void commentParse(std::vector<char>::iterator, std::vector<char>::iterator&);
 
 //Function for parsing the cdata in the document
-void cDataParse(std::vector<char>::iterator, std::vector<char>::iterator&, int&, int&);
+void cDataParse(std::vector<char>::iterator, std::vector<char>::iterator&, std::string&);
 
 //Function for parsing the end tags in the document
 void endTagParse(std::vector<char>::iterator&, std::vector<char>::iterator, int&, std::string&, std::string&, std::string&);
 
 //Function for parsing the start tags in the document
-void startTagParse (std::vector<char>::iterator, std::vector<char>::iterator&,          int&, std::string&, std::string&, std::string&);
+void startTagParse (std::vector<char>::iterator, std::vector<char>::iterator&, int&, std::string&, std::string&, std::string&);
 
 //Function for parsing the atributes in the document
 void attParse(std::vector<char>::iterator, std::vector<char>::iterator&,std::string &,std::string &,std::string &,std::string &);
 
 //Function for parsing the characters in the document
-void charcterParse(std::vector<char>::iterator&, std::vector<char>::iterator, int&, int&, int&);
+void charcterParse(std::vector<char>::iterator&, std::vector<char>::iterator, int&, std::string&, int&);
 
 //Function for parsing the namespace in the document
 void namespaceParse(std::vector<char>::iterator&, std::vector<char>::iterator, std::string&, std::string&);

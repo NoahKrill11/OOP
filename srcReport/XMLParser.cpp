@@ -1,3 +1,10 @@
+/*
+    XMLParser.cpp
+    
+    Defintions of free functions to be used for XML/srcML Parsing
+ 
+*/
+
 #include <iostream>
 #include <iterator>
 #include <string>
@@ -132,7 +139,7 @@ Function parses the declarations in the document
 */
 void declartionParse(std::vector<char>::iterator endBuffer, std::vector<char>::iterator &pc)
 {
-    std::vector<char>::iterator endpc = std::find(pc, endBuffer, '>');//finds the end tag
+    auto endpc = std::find(pc, endBuffer, '>');//finds the end tag
     pc = std::next(endpc);
     pc = std::find_if_not(pc, endBuffer, [] (char c) { return std::isspace(c); });
    /*
@@ -150,7 +157,7 @@ void declartionParse(std::vector<char>::iterator endBuffer, std::vector<char>::i
 void commentParse(std::vector<char>::iterator endBuffer, std::vector<char>::iterator &pc)
 {
     const std::string endcomment = "-->";
-    std::vector<char>::iterator endpc = std::search(pc, endBuffer, endcomment.begin(), endcomment.end());
+    auto endpc = std::search(pc, endBuffer, endcomment.begin(), endcomment.end());
     pc = std::next(endpc, strlen("-->"));
     /*
     If the iterator reaches the end of the of the buffer without
@@ -164,24 +171,23 @@ void commentParse(std::vector<char>::iterator endBuffer, std::vector<char>::iter
 Function parses the cdata in the document
 @param endbuffer; iterator to the end position of the buffer
 @param pc; iterator stored to current spot
-@param textsize int that stores source characters
-@param loc; int that stores the lines of code
+@param characters; charaters being parsed
+
 */
-void cDataParse(std::vector<char>::iterator endBuffer, std::vector<char>::iterator &pc, int &textsize, int &loc)
+void cDataParse(std::vector<char>::iterator endBuffer, std::vector<char>::iterator &pc, std::string &characters)
 {
     const std::string endcdata = "]]>";
     const std::string endcomment = "-->";
-    std::vector<char>::iterator endpc = std::search(pc, endBuffer, endcdata.begin(), endcdata.end());
+    auto endpc = std::search(pc, endBuffer, endcdata.begin(), endcdata.end());
     std::advance(pc, strlen("<![CDATA["));
-    std::string characters(pc, endpc);
+    std::string temp(pc, endpc);
+    characters=temp;
     /*
     If the iterator reaches the end of the of the buffer without
     finding the relevant value something went wrong and exit with code 1
     */
     if (endpc == endBuffer)
         std::exit(1);
-    textsize += characters.size();
-    loc += std::count(characters.begin(), characters.end(), '\n');
     pc = std::next(endpc, strlen("]]>"));
 }
 /*
@@ -193,9 +199,9 @@ Function parses the end tags in the document
 @param prefix; string that catches all of the prefixes in the document
 @param local_name; string that stores the type of local name used
 */
-void endTagParse(std::vector<char>::iterator &pc,std::vector<char>::iterator endBuffer, int &depth, std::string &qname, std::string &prefix ,std::string &local_name)
+void endTagParse(std::vector<char>::iterator &pc, std::vector<char>::iterator endBuffer, int &depth, std::string &qname, std::string &prefix ,std::string &local_name)
 {
-    std::vector<char>::iterator endpc = std::find(pc, endBuffer, '>');
+    auto endpc = std::find(pc, endBuffer, '>');
     /*
       If the iterator reaches the end of the of the buffer without
       finding the relevant value something went wrong and exit with code 1
@@ -203,7 +209,7 @@ void endTagParse(std::vector<char>::iterator &pc,std::vector<char>::iterator end
     if (endpc == endBuffer)
         std::exit(1);
     std::advance(pc, 2);
-    std::vector<char>::iterator pnameend = std::find_if(pc, endBuffer, [] (char c) { return std::isspace(c) || c == '>' || c == '/'; });
+    auto pnameend = std::find_if(pc, endBuffer, [] (char c) { return std::isspace(c) || c == '>' || c == '/'; });
     /*
     If the iterator reaches the end of the of the buffer without
     finding the relevant value something went wrong and exit with code 1
@@ -229,9 +235,9 @@ Function parses start tags in the document
 @param prefix; string that catches all of the prefixes in the document
 @param qname; string is a qulified name for an attribute, or tag
 */
-void startTagParse(std::vector<char>::iterator endBuffer,std::vector<char>::iterator &pc, int &depth, std::string &local_name, std::string &prefix, std::string &qname)
+void startTagParse(std::vector<char>::iterator endBuffer, std::vector<char>::iterator &pc, int &depth, std::string &local_name, std::string &prefix, std::string &qname)
 {
-    std::vector<char>::iterator endpc = std::find(pc, endBuffer, '>');
+    auto endpc = std::find(pc, endBuffer, '>');
     /*
       If the iterator reaches the end of the of the buffer without
       finding the relevant value something went wrong and exit with code 1
@@ -241,7 +247,7 @@ void startTagParse(std::vector<char>::iterator endBuffer,std::vector<char>::iter
     std::advance(pc, 1);
     if (*std::prev(endpc) != '/')
         ++depth;
-    const std::vector<char>::iterator pnameend = std::find_if(pc, endBuffer, [] (char c) { return std::isspace(c) || c == '>' || c == '/'; });
+    auto pnameend = std::find_if(pc, endBuffer, [] (char c) { return std::isspace(c) || c == '>' || c == '/'; });
     /*
       If the iterator reaches the end of the of the buffer without
       finding the relevant value something went wrong and exit with code 1
@@ -264,7 +270,7 @@ Function parses the attributes in the document
 @param prefix; string that catches all of the prefixes in the document
 @param qname; string is a qulified name for an attribute, or tag
 */
-void attParse(std::vector<char>::iterator endBuffer,std::vector<char>::iterator &pc, std::string &local_name,std::string &prefix,std::string &value,std::string &qname)
+void attParse(std::vector<char>::iterator endBuffer, std::vector<char>::iterator &pc, std::string &local_name, std::string &prefix, std::string &value, std::string &qname)
 {
     auto pnameend = std::find(pc, endBuffer, '=');
     /*
@@ -370,20 +376,19 @@ void namespaceParse(std::vector<char>::iterator &pc, std::vector<char>::iterator
  @param pc; iterator stored to current spot
  @param endbuffer; iterator to the end position of the buffer
  @param depth; int number of tags within the code
- @param loc; int nuber of lines in the documenr
+ @param characters; charaters being parsed
  @param textsize; int number of source characters
  */
-void charcterParse(std::vector<char>::iterator &pc, std::vector<char>::iterator endBuffer, int &depth, int &loc, int &textsize)
+void charcterParse(std::vector<char>::iterator &pc, std::vector<char>::iterator endBuffer, int &depth, std::string &characters, int &textsize)
 {
-    std::vector<char>::iterator pcur = pc;
+   auto pcur = pc;
     pc = std::find_if(pc, endBuffer, [] (char c) { return c == '<' || c == '&'; });
     if (depth > 0)
     {
-        std::string characters;
         if (*pcur != '&')
         {
-            std::string characters(pcur, pc);
-            loc += std::count(characters.begin(), characters.end(), '\n');
+            std::string temp(pcur, pc);
+            characters=temp;
         }
         else
         {

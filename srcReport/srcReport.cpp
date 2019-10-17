@@ -2,10 +2,6 @@
     srcReport.cpp
 
     Produces a report that counts the number of statements, declarations, etc. of C++ programs
-
-    Input is a srcML form of the code.
-
-    Note: Does not handle XML comments
 */
 
 #include <iostream>
@@ -39,11 +35,12 @@ int main()
     int block_count=0;
     bool intag = false;
     std::vector<char> buffer(BUFFER_SIZE);
-    std::vector<char>::iterator pc = buffer.end();
+    auto pc = buffer.end();
     ssize_t numbytes = -1;
+    
     while (numbytes !=0)
     {
-        if (bufferCheck(buffer.end(),pc,intag))
+        if (bufferCheck(buffer.end(), pc, intag))
         {
             // fill the buffer
             fillTheBuffer(buffer, pc, numbytes, BUFFER_SIZE,total);
@@ -64,7 +61,10 @@ int main()
         else if (cDataCheck(pc))
         {
             // parse CDATA
-            cDataParse(buffer.end(), pc,textsize,loc);
+            std::string characters;
+            cDataParse(buffer.end(), pc, characters);
+            loc += std::count(characters.begin(), characters.end(), '\n');
+            textsize += characters.size();
             
         }
         
@@ -78,9 +78,8 @@ int main()
         else if (startTagCheck(pc))
         {
             // parse start tag
-            std::string local_name;
-            std::string prefix, qname;
-            startTagParse(buffer.end(),pc, depth, local_name, prefix,qname);
+            std::string local_name, prefix, qname;
+            startTagParse(buffer.end(), pc, depth, local_name, prefix, qname);
             if (local_name == "expr")
                 ++expr_count;
             else if (local_name == "function")
@@ -104,17 +103,17 @@ int main()
             endStartTag(pc, intag);
         }
         
-        else if (emptyElementCheck(pc,intag))
+        else if (emptyElementCheck(pc, intag))
         {
             // end empty element
             emptyElement(pc, intag);
         }
         
-        else if (namespaceCheck(intag, buffer.end(),pc))
+        else if (namespaceCheck(intag, buffer.end(), pc))
         {
             // parse namespace
-            std::string uri,prefix;
-            namespaceParse(pc, buffer.end(),uri,prefix);
+            std::string uri, prefix;
+            namespaceParse(pc, buffer.end(), uri, prefix);
         }
         
         else if (attCheck(intag, pc))
@@ -129,8 +128,9 @@ int main()
         
         else
         {
-            //parse the rest of the characters
-            charcterParse(pc, buffer.end(), depth, loc, textsize);
+            std::string characters;
+            charcterParse(pc, buffer.end(), depth, characters, textsize);
+            loc += std::count(characters.begin(), characters.end(), '\n');
         }
     }
     

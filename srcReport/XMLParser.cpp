@@ -15,15 +15,10 @@
  */
 bool bufferCheck(std::vector<char>::iterator endBuffer, std::vector<char>::iterator &pc, bool &intag)
 {
-if (pc == endBuffer ||
+return (pc == endBuffer ||
 (*pc == '<' && std::find(pc, endBuffer, '>') == endBuffer) ||
 (!intag && *pc == '&' && std::distance(pc, endBuffer) <= strlen("&amp;")) ||
-(!intag && *pc == '<' && std::distance(pc, endBuffer) > 1 && *std::next(pc) == '!'))
-    return true;
-    else
-    {
-        return false;
-    }
+        (!intag && *pc == '<' && std::distance(pc, endBuffer) > 1 && *std::next(pc) == '!'));
 }
 /*
 Function for checking if the conditions are met to parse the declaration
@@ -31,12 +26,8 @@ Function for checking if the conditions are met to parse the declaration
 */
 bool declarationCheck(std::vector<char>::iterator &pc)
 {
-    if(*pc == '<' && *std::next(pc) == '?')
-       return true;
-    else
-       {
-        return false;
-       }
+    return (*pc == '<' && *std::next(pc) == '?');
+   
 }
 /*
 Function for checking if the conditions are met to parse the comments
@@ -44,12 +35,7 @@ Function for checking if the conditions are met to parse the comments
 */
 bool commentCheck(std::vector<char>::iterator &pc)
 {
-   if(*pc == '<' && *std::next(pc) == '!' && *std::next(pc, 2) == '-' && *std::next(pc, 3) == '-')
-       return true;
-    else
-    {
-        return false;
-    }
+    return (*pc == '<' && *std::next(pc) == '!' && *std::next(pc, 2) == '-' && *std::next(pc, 3) == '-');
 }
 /*
 Function for checking if the conditions are met to parse the cdatas
@@ -57,12 +43,7 @@ Function for checking if the conditions are met to parse the cdatas
 */
 bool cDataCheck(std::vector<char>::iterator &pc)
 {
-    if (*pc == '<' && *std::next(pc) == '!' && *std::next(pc, 2) == '[')
-        return true;
-    else
-    {
-        return false;
-    }
+    return (*pc == '<' && *std::next(pc) == '!' && *std::next(pc, 2) == '[');
 }
 /*
 Function for checking if the conditions are met to parse the namespaces
@@ -72,13 +53,8 @@ Function for checking if the conditions are met to parse the namespaces
 */
 bool namespaceCheck(bool &intag, std::vector<char>::iterator endBuffer, std::vector<char>::iterator &pc)
 {
-   if( intag && *pc != '>' && *pc != '/' && std::distance(pc, endBuffer) > strlen("xmlns") && std::string(pc, std::next(pc, strlen("xmlns"))) == "xmlns"
-    && (*std::next(pc, strlen("xmlns")) == ':' || *std::next(pc, strlen("xmlns")) == '='))
-       return true;
-    else
-    {
-        return false;
-    }
+   return (intag && *pc != '>' && *pc != '/' && std::distance(pc, endBuffer) > strlen("xmlns") && std::string(pc, std::next(pc, strlen("xmlns"))) == "xmlns"
+      && (*std::next(pc, strlen("xmlns")) == ':' || *std::next(pc, strlen("xmlns")) == '='));
 }
 /*
 Function for checking if the conditions are met to parse the start tags
@@ -86,12 +62,7 @@ Function for checking if the conditions are met to parse the start tags
 */
 bool startTagCheck(std::vector<char>::iterator &pc)
 {
-    if (*pc == '<' && *std::next(pc) != '/' && *std::next(pc) != '?')
-        return true;
-    else
-    {
-        return false;
-    }
+    return (*pc == '<' && *std::next(pc) != '/' && *std::next(pc) != '?');
 }
 /*
 Function for checking if the conditions are met to parse the end tags
@@ -99,12 +70,8 @@ Function for checking if the conditions are met to parse the end tags
 */
 bool endTagCheck(std::vector<char>::iterator &pc)
 {
-    if (*pc == '<' && *std::next(pc) == '/')
-        return true;
-    else
-    {
-        return false;
-    }
+    return (*pc == '<' && *std::next(pc) == '/');
+    
 }
 /*
 Function for checking if the conditions are met to parse the empty elements
@@ -113,12 +80,8 @@ Function for checking if the conditions are met to parse the empty elements
 */
 bool emptyElementCheck(std::vector<char>::iterator &pc, bool &intag)
 {
-    if(intag && *pc == '/' && *std::next(pc) == '>')
-        return true;
-    else
-    {
-        return false;
-    }
+    return (intag && *pc == '/' && *std::next(pc) == '>');
+   
 }
 /*
 Function for checking if the conditions are met to parse the attributes
@@ -127,12 +90,7 @@ Function for checking if the conditions are met to parse the attributes
 */
 bool attCheck(bool &intag, std::vector<char>::iterator &pc)
 {
-    if (intag && *pc != '>' && *pc != '/')
-        return true;
-    else
-    {
-        return false;
-    }
+    return (intag && *pc != '>' && *pc != '/');
 }
 /*
 Function for checking if the conditions are met to parse the end of the start tag
@@ -141,12 +99,7 @@ Function for checking if the conditions are met to parse the end of the start ta
 */
 bool endStartTagCheck(std::vector<char>::iterator &pc, bool &intag)
 {
-    if (intag && *pc == '>')
-        return true;
-    else
-    {
-        return false;
-    }
+    return (intag && *pc == '>');
 }
 /*
  Function fills the buffer
@@ -156,7 +109,7 @@ bool endStartTagCheck(std::vector<char>::iterator &pc, bool &intag)
  @param BUFFER_SIZE; const int that states how big the buffer needs to be
  @param total; long stores number of characters are in the document
  */
-void fillTheBuffer(std::vector<char> &buffer, std::vector<char>::iterator &pc, ssize_t & numbytes, const int BUFFER_SIZE, long &total)
+void fillTheBuffer(std::vector<char> &buffer, std::vector<char>::iterator &pc, ssize_t &numbytes, const int BUFFER_SIZE, long &total)
 {
     auto d = std::distance(pc, buffer.end());
     std::copy(pc, buffer.end(), buffer.begin());
@@ -194,7 +147,7 @@ void declartionParse(std::vector<char>::iterator endBuffer, std::vector<char>::i
   @param endbuffer; iterator to the end position of the buffer
   @param pc; iterator stored to current spot
   */
-void commentParse(std::vector<char>::iterator  endBuffer, std::vector<char>::iterator &pc)
+void commentParse(std::vector<char>::iterator endBuffer, std::vector<char>::iterator &pc)
 {
     const std::string endcomment = "-->";
     std::vector<char>::iterator endpc = std::search(pc, endBuffer, endcomment.begin(), endcomment.end());
@@ -214,7 +167,7 @@ Function parses the cdata in the document
 @param textsize int that stores source characters
 @param loc; int that stores the lines of code
 */
-void cDataParse(std::vector<char>::iterator endBuffer, std::vector<char>::iterator& pc ,int &textsize, int &loc)
+void cDataParse(std::vector<char>::iterator endBuffer, std::vector<char>::iterator &pc, int &textsize, int &loc)
 {
     const std::string endcdata = "]]>";
     const std::string endcomment = "-->";
@@ -240,7 +193,7 @@ Function parses the end tags in the document
 @param prefix; string that catches all of the prefixes in the document
 @param local_name; string that stores the type of local name used
 */
-void endTagParse(std::vector<char>::iterator& pc,std::vector<char>::iterator endBuffer, int &depth, std::string &qname, std::string &prefix ,std::string &local_name)
+void endTagParse(std::vector<char>::iterator &pc,std::vector<char>::iterator endBuffer, int &depth, std::string &qname, std::string &prefix ,std::string &local_name)
 {
     std::vector<char>::iterator endpc = std::find(pc, endBuffer, '>');
     /*
@@ -276,7 +229,7 @@ Function parses start tags in the document
 @param prefix; string that catches all of the prefixes in the document
 @param qname; string is a qulified name for an attribute, or tag
 */
-void startTagParse(std::vector<char>::iterator endBuffer,std::vector<char>::iterator& pc, int &depth, std::string &local_name, std::string &prefix, std::string& qname)
+void startTagParse(std::vector<char>::iterator endBuffer,std::vector<char>::iterator &pc, int &depth, std::string &local_name, std::string &prefix, std::string &qname)
 {
     std::vector<char>::iterator endpc = std::find(pc, endBuffer, '>');
     /*
@@ -311,7 +264,7 @@ Function parses the attributes in the document
 @param prefix; string that catches all of the prefixes in the document
 @param qname; string is a qulified name for an attribute, or tag
 */
-void attParse(std::vector<char>::iterator endBuffer,std::vector<char>::iterator& pc, std::string &local_name,std::string &prefix,std::string &value,std::string &qname)
+void attParse(std::vector<char>::iterator endBuffer,std::vector<char>::iterator &pc, std::string &local_name,std::string &prefix,std::string &value,std::string &qname)
 {
     auto pnameend = std::find(pc, endBuffer, '=');
     /*
@@ -362,7 +315,7 @@ Function parses the namespace in the document
 @param ufi; string catches Uniform Resource Identifiers
 @param prefix; string that catches all of the prefixes in the document
 */
-void namespaceParse(std::vector<char>::iterator& pc, std::vector<char>::iterator endBuffer, std::string &uri, std::string &prefix)
+void namespaceParse(std::vector<char>::iterator &pc, std::vector<char>::iterator endBuffer, std::string &uri, std::string &prefix)
 {
     std::advance(pc, strlen("xmlns"));
     auto pnameend = std::find(pc, endBuffer, '=');
@@ -420,7 +373,7 @@ void namespaceParse(std::vector<char>::iterator& pc, std::vector<char>::iterator
  @param loc; int nuber of lines in the documenr
  @param textsize; int number of source characters
  */
-void charcterParse(std::vector<char>::iterator& pc, std::vector<char>::iterator endBuffer, int &depth, int &loc, int &textsize)
+void charcterParse(std::vector<char>::iterator &pc, std::vector<char>::iterator endBuffer, int &depth, int &loc, int &textsize)
 {
     std::vector<char>::iterator pcur = pc;
     pc = std::find_if(pc, endBuffer, [] (char c) { return c == '<' || c == '&'; });
@@ -462,7 +415,7 @@ Function parses the empty elements in the document
 @param pc; iterator stored to current spot
 @param intag; boolen that determines if we parsing something inside of the tag
 */
-void emptyElement(std::vector<char>::iterator& pc, bool &intag)
+void emptyElement(std::vector<char>::iterator &pc, bool &intag)
 {
     std::advance(pc, 2);
     intag=false;
@@ -472,7 +425,7 @@ Function parses the end of the start tags in the document
 @param pc; iterator stored to current spot
 @param intag; boolen that determines if we parsing something inside of the tag
 */
-void endStartTag(std::vector<char>::iterator& pc, bool &intag)
+void endStartTag(std::vector<char>::iterator &pc, bool &intag)
 {
     std::advance(pc, 1);
     intag=false;

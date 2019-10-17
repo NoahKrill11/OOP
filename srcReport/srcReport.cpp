@@ -36,7 +36,7 @@ int main()
     int depth = 0;
     long total = 0;
     int return_count=0;
-    //int block_count=0;
+    int block_count=0;
     bool intag = false;
     std::vector<char> buffer(BUFFER_SIZE);
     std::vector<char>::iterator pc = buffer.end();
@@ -48,27 +48,33 @@ int main()
             // fill the buffer
             fillTheBuffer(buffer, pc, numbytes, BUFFER_SIZE,total);
         }
+        
         else if (declarationCheck(pc))
         {
             // parse XML declaration
             declartionParse(buffer.end(), pc);
         }
+        
         else if (commentCheck(pc))
         {
             // parse XML comment
             commentParse(buffer.end(), pc);
         }
+        
         else if (cDataCheck(pc))
         {
             // parse CDATA
             cDataParse(buffer.end(), pc,textsize,loc);
+            
         }
+        
         else if (endTagCheck(pc))
         {
             // parse end tag
             std::string qname, prefix, local_name;
             endTagParse(pc, buffer.end(), depth, qname, prefix, local_name);
         }
+        
         else if (startTagCheck(pc))
         {
             // parse start tag
@@ -91,37 +97,43 @@ int main()
                 ++return_count;
             intag = true;
         }
+        
         else if (endStartTagCheck(pc, intag))
         {
             // end start tag
             endStartTag(pc, intag);
         }
+        
         else if (emptyElementCheck(pc,intag))
         {
             // end empty element
             emptyElement(pc, intag);
         }
+        
         else if (namespaceCheck(intag, buffer.end(),pc))
         {
             // parse namespace
             std::string uri,prefix;
             namespaceParse(pc, buffer.end(),uri,prefix);
         }
+        
         else if (attCheck(intag, pc))
         {
             // parse attribute
-            std::string local_name, prefix, value, qname ;
+            std::string local_name, prefix, value, qname;
             
             attParse(buffer.end(), pc, local_name, prefix, value, qname);
-           // if (value == "block")
-              //  ++block_count;
+           if (value == "block")
+               ++block_count;
         }
+        
         else
         {
             //parse the rest of the characters
             charcterParse(pc, buffer.end(), depth, loc, textsize);
         }
     }
+    
     std::cout << "bytes: " << total << '\n';
     std::cout << "files: " << file_count << '\n';
     std::cout << "LOC: " << loc << '\n';
@@ -132,6 +144,6 @@ int main()
     std::cout << "expressions: " << expr_count << '\n';
     std::cout << "comments: " << comment_count << '\n';
     std::cout << "returns: " << return_count << '\n';
-   // std::cout << "block comments "<< block_count <<'\n';
+    std::cout << "block comments "<< block_count <<'\n';
     return 0;
 }

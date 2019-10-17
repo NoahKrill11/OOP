@@ -2,146 +2,136 @@
     srcReport.cpp
 
     Produces a report that counts the number of statements, declarations, etc. of C++ programs
+
+    Input is a srcML form of the code.
+
+    Note: Does not handle XML comments
 */
 
 #include <iostream>
 #include <iterator>
 #include <string>
+#include <cstring>
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <unistd.h>
+#include <errno.h>
 #include <vector>
+#include <algorithm>
+#include <ctype.h>
 #include "XMLParser.hpp"
-#include <unordered_map>
+
+const int BUFFER_SIZE = 16 * 1024;
 
 int main()
 {
+    int textsize = 0;
+    int loc = 0;
+    int expr_count = 0;
+    int function_count = 0;
+    int class_count = 0;
+    int file_count = 0;
+    int decl_count = 0;
+    int comment_count = 0;
+    int depth = 0;
     long total = 0;
-    std::unordered_map<std::string,int> count{};
-    /*
-     creating an object with the use of Lambdas
-     Lambdas are anonymous fuctions that will be called if the functions in the other files need them
-     They do all the parsing outside of srcreport while keeping the srcML varibles inside
-     */
-    xmlparser parser(
-    //creating a lambda function that returns void and only passes in the map "count" and the object "parser"
-        [&count,&parser]()->void
+    int return_count=0;
+    //int block_count=0;
+    bool intag = false;
+    std::vector<char> buffer(BUFFER_SIZE);
+    std::vector<char>::iterator pc = buffer.end();
+    ssize_t numbytes = -1;
+    while (numbytes !=0)
     {
-        //counting the source characters and the lines of code with the use of a lambda functions and maps
-        count["textsize"] += parser.getsize();
-        count["loc"] += std::count(parser.getCharacters().begin(),parser.getCharacters().end(), '\n');
-    },
-     [&count, &parser]() -> void {
-     //counting the local names with the use of a lambda functions and maps
-     if (parser.getLocal_name() == "unit" && parser.getdepth() > 1)
-         ++count["file"];
-     else if (parser.getLocal_name() != "block" && parser.getLocal_name() != "file")
-         ++count[parser.getLocal_name()];
-    },
-    [&count,&parser]()->void
-    {
-        //counting the attributes names with the use of a lambda functions and maps
-        if (parser.getvalue() == "block")
-        ++count["block"];
-        
-    },
-    [&count,&parser]()->void
-     {
-    if (*parser.getpcur() != '&')
-    {
-        //counting the lines of code with the use of a lambda functions and maps
-        std::string characters(parser.getpcur(), parser.getpc());
-        count["loc"] += std::count(characters.begin(), characters.end(), '\n');
-    }
-    },
-    [&count,&parser]()->void
-     {
-        //counting the source characters with the use of a lambda functions and maps
-         ++count["textsize"];
-    }
-    );
-
-    while (parser.getNumbytes() !=0)
-    {
-        if (parser.bufferCheck())
+        if (bufferCheck(buffer.end(),pc,intag))
         {
             // fill the buffer
-           parser.fillTheBuffer();
-            total+=parser.getNumbytes();
+            fillTheBuffer(buffer, pc, numbytes, BUFFER_SIZE,total);
         }
-        
-        else if (parser.declarationCheck())
+        else if (declarationCheck(pc))
         {
             // parse XML declaration
-            parser.declartionParse();
+            declartionParse(buffer.end(), pc);
         }
-        
-
-        else if (parser.commentCheck())
+        else if (commentCheck(pc))
         {
             // parse XML comment
-            parser.commentParse();
+            commentParse(buffer.end(), pc);
         }
-        
-        else if (parser.cDataCheck())
+        else if (cDataCheck(pc))
         {
             // parse CDATA
-            parser.cDataParse();
+            cDataParse(buffer.end(), pc,textsize,loc);
         }
-        
-        else if (parser.endTagCheck())
+        else if (endTagCheck(pc))
         {
-            //parse end tag
-            parser.endTagParse();
+            // parse end tag
+            std::string qname, prefix, local_name;
+            endTagParse(pc, buffer.end(), depth, qname, prefix, local_name);
         }
-        
-        else if (parser.startTagCheck())
+        else if (startTagCheck(pc))
         {
-            //parse start tag
-            parser.startTagParse();
+            // parse start tag
+            std::string local_name;
+            std::string prefix, qname;
+            startTagParse(buffer.end(),pc, depth, local_name, prefix,qname);
+            if (local_name == "expr")
+                ++expr_count;
+            else if (local_name == "function")
+                ++function_count;
+            else if (local_name == "decl")
+                ++decl_count;
+            else if (local_name == "class")
+                ++class_count;
+            else if (local_name == "unit" && depth > 1)
+                ++file_count;
+            else if (local_name == "comment")
+                ++comment_count;
+            else if (local_name == "return" )
+                ++return_count;
+            intag = true;
+        }
+        else if (endStartTagCheck(pc, intag))
+        {
+            // end start tag
+            endStartTag(pc, intag);
+        }
+        else if (emptyElementCheck(pc,intag))
+        {
+            // end empty element
+            emptyElement(pc, intag);
+        }
+        else if (namespaceCheck(intag, buffer.end(),pc))
+        {
+            // parse namespace
+            std::string uri,prefix;
+            namespaceParse(pc, buffer.end(),uri,prefix);
+        }
+        else if (attCheck(intag, pc))
+        {
+            // parse attribute
+            std::string local_name, prefix, value, qname ;
             
+            attParse(buffer.end(), pc, local_name, prefix, value, qname);
+           // if (value == "block")
+              //  ++block_count;
         }
-       
-        else if (parser.endStartTagCheck())
-        {
-            //end start tag
-            parser.endStartTag();
-        }
-        
-        else if (parser.emptyElementCheck())
-        {
-            //end empty element
-            parser.emptyElement();
-        }
-        
-        else if (parser.namespaceCheck())
-        {
-            //parse namespace
-           
-            parser.namespaceParse();
-        }
-        
-        else if (parser.attCheck())
-        {
-            //parse attribute
-            parser.attParse();
-        }
-        
         else
         {
-        //parse characters
-            parser.charcterParse();
+            //parse the rest of the characters
+            charcterParse(pc, buffer.end(), depth, loc, textsize);
         }
     }
-    
     std::cout << "bytes: " << total << '\n';
-    std::cout << "files: " << count["file"] << '\n';
-    std::cout << "LOC: " << count["loc"] << '\n';
-    std::cout << "source characters: " << count["textsize"] << '\n';
-    std::cout << "classes: " << count["class"] << '\n';
-    std::cout << "functions: " << count["function"] << '\n';
-    std::cout << "declarations: " << count["decl"] << '\n';
-    std::cout << "expressions: " << count["expr"] << '\n';
-    std::cout << "comments: " << count["comment"] << '\n';
-    std::cout << "returns: " << count["return"] << '\n';
-    std::cout << "block comments "<< count["block"] <<'\n';
+    std::cout << "files: " << file_count << '\n';
+    std::cout << "LOC: " << loc << '\n';
+    std::cout << "source characters: " << textsize << '\n';
+    std::cout << "classes: " << class_count << '\n';
+    std::cout << "functions: " << function_count << '\n';
+    std::cout << "declarations: " << decl_count << '\n';
+    std::cout << "expressions: " << expr_count << '\n';
+    std::cout << "comments: " << comment_count << '\n';
+    std::cout << "returns: " << return_count << '\n';
+   // std::cout << "block comments "<< block_count <<'\n';
     return 0;
 }
-

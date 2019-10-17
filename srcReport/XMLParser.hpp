@@ -24,59 +24,71 @@ private:
     std::string characters;
     std::string value;
     std::string uri;
-    std::function<void()> statements;
-    std::function<void()> statements2;
-    std::function<void()> statements3;
-    
+    std::function<void()> cData;
+    std::function<void()> local;
+    std::function<void()> attribute;
+    std::function<void()> loc;
+    std::function<void()> sourceChar;
 
-    
 public:
     
      //Constructor for calling the parser with std::functions as variables
-    xmlparser(std::function<void()>, std::function<void()>,std::function<void()>);
+    xmlparser(std::function<void()>, std::function<void()>, std::function<void()>, std::function<void()>, std::function<void()>);
 
      //Deconstructor
     ~xmlparser();
     
     //Function for getting pc value
-    //This is an inline function so its best to keep it in hpp file to get the pc
     std::vector<char>::iterator getpc()
-    {return pc;}
+    {
+        return pc;
+    }
      
     //This is an inline function so its best to keep it in hpp file to get the buffer
     std::vector<char>getbuffer()
-    {return buffer;}
+    {
+        return buffer;
+    }
     
     size_t getsize() { return characters.size();}
   
     //Function for getting the depth value
     int getdepth()
-    {return depth;}
+    {
+        return depth;
+    }
     
     //Function for returning the numbytes value
     ssize_t getNumbytes()
     
-    {return numbytes;}
-      //Function for returning the local name
+    {
+        return numbytes;
+    }
+    
+    //Function for returning the local name
     std::string getLocal_name()
     {
         return local_name;
     }
-      //Function for returning the characters
+    
+    //Function for returning the characters
     std::string getCharacters()
     {
         return characters;
     }
-      //Function for returning the pcur
+    
+    //Function for returning the pcur
    std::vector<char>::iterator getpcur()
     {
         return pcur;
     }
-      //Function for returning the value
+    
+    //Function for returning the value
     std::string getvalue()
     {
         return value;
     }
+    
     //Function for checking if the conditions are met to fill the buffer
     bool bufferCheck();
 

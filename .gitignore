@@ -1,4 +1,13 @@
+<<<<<<< HEAD
 
 srcReport/XMLParser.o
 .DS_Store
 srcReport/srcReport.o
+=======
+.DS_Store
+XMLParser.o
+srcReport.o
+libxml2.xml
+srcReport
+>>>>>>> e7c6346593d8aace0dbcb805ffdb8fcec4018c0d
+*.o

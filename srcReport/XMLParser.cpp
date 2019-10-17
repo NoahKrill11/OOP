@@ -17,9 +17,9 @@
  variables are standard functions and will be called later in the function if need be
  set up vaiables for use at begining of the program
 */
-
-
-xmlparser::xmlparser(std::function<void()> count,std::function<void()> count2,std::function<void()> count3) : statements(count), statements2(count2), statements3(count3)
+xmlparser::xmlparser(std::function<void()> count,std::function<void()> count2,std::function<void()> count3,
+                     std::function<void()> count4, std::function<void()> count5) : cData(count), local(count2),
+                    attribute(count3), loc(count4), sourceChar(count5)
 {
     const int BUFFER_SIZE = 16 * 1024;
     buffer.resize(BUFFER_SIZE);
@@ -29,15 +29,12 @@ xmlparser::xmlparser(std::function<void()> count,std::function<void()> count2,st
     pc=buffer.end();
 }
 
-/*
- Deconstructor to deconstruct the parser
- */
+
+//Deconstructor to deconstruct the parser
   xmlparser::~xmlparser()
 {}
 
-/*
- Function for checking if the conditions are met to fill the buffer
- */
+//Function for checking if the conditions are met to fill the buffer
 bool xmlparser::bufferCheck()
 {
     return (pc == buffer.end() ||
@@ -46,83 +43,62 @@ bool xmlparser::bufferCheck()
             (!intag && *pc == '<' && std::distance(pc, buffer.end()) > 1 && *std::next(pc) == '!'));
 }
 
-/*
-Function for checking if the conditions are met to parse the declaration
-*/
+
+//Function for checking if the conditions are met to parse the declaration
 bool xmlparser::declarationCheck()
 {
     return (*pc == '<' && *std::next(pc) == '?');
 }
-
-/*
-Function for checking if the conditions are met to parse the comments
-*/
+//Function for checking if the conditions are met to parse the comments
 bool xmlparser::commentCheck()
 {
     return (*pc == '<' && *std::next(pc) == '!' && *std::next(pc, 2) == '-' && *std::next(pc, 3) == '-');
 }
 
-/*
-Function for checking if the conditions are met to parse the cdata
-*/
+//Function for checking if the conditions are met to parse the cdata
 bool xmlparser::cDataCheck()
 {
     return (*pc == '<' && *std::next(pc) == '!' && *std::next(pc, 2) == '[');
 }
 
-/*
-Function for checking if the conditions are met to parse the namespaces
-*/
+//Function for checking if the conditions are met to parse the namespaces
 bool xmlparser::namespaceCheck()
 {
    return (intag && *pc != '>' && *pc != '/' && std::distance(pc, buffer.end()) > strlen("xmlns") && std::string(pc, std::next(pc, strlen("xmlns"))) == "xmlns"
       && (*std::next(pc, strlen("xmlns")) == ':' || *std::next(pc, strlen("xmlns")) == '='));
 }
 
-/*
-Function for checking if the conditions are met to parse the start tags
-*/
+//Function for checking if the conditions are met to parse the start tags
 bool xmlparser::startTagCheck()
 {
     return (*pc == '<' && *std::next(pc) != '/' && *std::next(pc) != '?');
 }
 
-/*
-Function for checking if the conditions are met to parse the end tags
-*/
+//Function for checking if the conditions are met to parse the end tags
 bool xmlparser::endTagCheck()
 {
     return (*pc == '<' && *std::next(pc) == '/');
-    
 }
 
-/*
-Function for checking if the conditions are met to parse the empty elements
-*/
+//Function for checking if the conditions are met to parse the empty elements
 bool xmlparser::emptyElementCheck()
 {
     return (intag && *pc == '/' && *std::next(pc) == '>');
 }
 
-/*
-Function for checking if the conditions are met to parse the attributes
-*/
+//Function for checking if the conditions are met to parse the attributes
 bool xmlparser::attCheck()
 {
     return (intag && *pc != '>' && *pc != '/');
 }
 
-/*
-Function for checking if the conditions are met to parse the end of the start tag
-*/
+//Function for checking if the conditions are met to parse the end of the start tag
 bool xmlparser::endStartTagCheck()
 {
     return (intag && *pc == '>');
 }
 
-/*
- Function fills the buffer
-*/
+//Function fills the buffer
 void xmlparser::fillTheBuffer()
 {
     auto d = std::distance(pc, buffer.end());
@@ -140,9 +116,7 @@ void xmlparser::fillTheBuffer()
     
 }
 
-/*
-Function parses the declarations in the document
-*/
+//Function parses the declarations in the document
 void xmlparser::declartionParse()
 {
     auto endpc = std::find(pc, buffer.end(), '>');//finds the end tag
@@ -156,9 +130,7 @@ void xmlparser::declartionParse()
         std::exit(1);
 }
 
-/*
-Function parses the comments in the document
-*/
+//Function parses the comments in the document
 void xmlparser::commentParse()
 {
     const std::string endcomment = "-->";
@@ -173,9 +145,7 @@ void xmlparser::commentParse()
     pc = std::find_if_not(pc, buffer.end(), [] (char c) { return std::isspace(c); });
 }
 
-/*
-Function parses the cdata in the document
-*/
+//Function parses the cdata in the document
 void xmlparser::cDataParse()
 {
     const std::string endcdata = "]]>";
@@ -190,12 +160,10 @@ void xmlparser::cDataParse()
         std::exit(1);
     pc = std::next(endpc, strlen("]]>"));
     //calling on the the std::functions that was used in the constructor
-    statements2();
+    cData();
 }
 
-/*
-Function parses the end tags in the document
-*/
+//Function parses the end tags in the document
 void xmlparser::endTagParse ()
 {
     auto endpc = std::find(pc, buffer.end(), '>');
@@ -221,9 +189,7 @@ void xmlparser::endTagParse ()
     --depth;
 }
 
-/*
-Function parses start tags in the document
-*/
+//Function parses start tags in the document
 void xmlparser::startTagParse()
 {
     auto endpc = std::find(pc, buffer.end(), '>');
@@ -251,12 +217,10 @@ void xmlparser::startTagParse()
     pc = std::find_if_not(pc, buffer.end(), [] (char c) { return std::isspace(c); });
     intag = true;
     //calling on the the std::functions that was used in the constructor
-    statements();
+    local();
 }
 
-/*
-Function parses the attributes in the document
-*/
+//Function parses the attributes in the document
 void xmlparser::attParse()
 {
   
@@ -300,12 +264,10 @@ void xmlparser::attParse()
     pc = std::next(pvalueend);
     pc = std::find_if_not(pc, buffer.end(), [] (char c) { return std::isspace(c); });
     //calling on the the std::functions that was used in the constructor
-  statements3();
+    attribute();
 }
 
-/*
-Function parses the namespace in the document
-*/
+//Function parses the namespace in the document
 void xmlparser::namespaceParse()
 {
     std::advance(pc, strlen("xmlns"));
@@ -355,10 +317,8 @@ void xmlparser::namespaceParse()
     pc = std::next(pvalueend);
     pc = std::find_if_not(pc, buffer.end(), [] (char c) { return std::isspace(c); });
 }
-
- /*
- Function parses the characters in the document
- */
+ 
+//Function parses the characters in the document
 void xmlparser::charcterParse()
 {
     pcur = pc;
@@ -368,6 +328,8 @@ void xmlparser::charcterParse()
     {
         if (*pcur != '&')
         {
+             //calling on the the std::functions that was used in the constructor
+            loc();
             return;
         }
         else
@@ -392,23 +354,20 @@ void xmlparser::charcterParse()
                 characters += '&';
                 std::advance(pc, 1);
             }
+             //calling on the the std::functions that was used in the constructor
+            sourceChar();
         }
     }
-    
 }
 
-/*
-Function parses the empty elements in the document
-*/
+//Function parses the empty elements in the document
 void xmlparser::emptyElement()
 {
     std::advance(pc, 2);
     intag=false;
 }
 
-/*
-Function parses the end of the start tags in the document
-*/
+//Function parses the end of the start tags in the document
 void xmlparser::endStartTag()
 {
     std::advance(pc, 1);

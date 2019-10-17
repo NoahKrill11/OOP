@@ -14,9 +14,7 @@
 int main()
 {
     long total = 0;
-    //xmlparser parser;
     std::unordered_map<std::string,int> count{};
-    
     /*
      creating an object with the use of Lambdas
      Lambdas are anonymous fuctions that will be called if the functions in the other files need them
@@ -24,22 +22,41 @@ int main()
      */
     xmlparser parser(
     //creating a lambda function that returns void and only passes in the map "count" and the object "parser"
-    [&count, &parser]() -> void {
-    if (parser.getLocal_name() == "unit" && parser.getdepth() > 1)
-        ++count["file"];
-    else if (parser.getLocal_name() != "block" && parser.getLocal_name() != "file")
-        ++count[parser.getLocal_name()];
-    },
         [&count,&parser]()->void
     {
+        //counting the source characters and the lines of code with the use of a lambda functions and maps
         count["textsize"] += parser.getsize();
         count["loc"] += std::count(parser.getCharacters().begin(),parser.getCharacters().end(), '\n');
     },
-        [&count, &parser]()->void
+     [&count, &parser]() -> void {
+     //counting the local names with the use of a lambda functions and maps
+     if (parser.getLocal_name() == "unit" && parser.getdepth() > 1)
+         ++count["file"];
+     else if (parser.getLocal_name() != "block" && parser.getLocal_name() != "file")
+         ++count[parser.getLocal_name()];
+    },
+    [&count,&parser]()->void
     {
+        //counting the attributes names with the use of a lambda functions and maps
         if (parser.getvalue() == "block")
         ++count["block"];
-    });
+        
+    },
+    [&count,&parser]()->void
+     {
+    if (*parser.getpcur() != '&')
+    {
+        //counting the lines of code with the use of a lambda functions and maps
+        std::string characters(parser.getpcur(), parser.getpc());
+        count["loc"] += std::count(characters.begin(), characters.end(), '\n');
+    }
+    },
+    [&count,&parser]()->void
+     {
+        //counting the source characters with the use of a lambda functions and maps
+         ++count["textsize"];
+    }
+    );
 
     while (parser.getNumbytes() !=0)
     {
@@ -47,14 +64,12 @@ int main()
         {
             // fill the buffer
            parser.fillTheBuffer();
-
             total+=parser.getNumbytes();
         }
         
         else if (parser.declarationCheck())
         {
             // parse XML declaration
-        
             parser.declartionParse();
         }
         
@@ -62,72 +77,58 @@ int main()
         else if (parser.commentCheck())
         {
             // parse XML comment
-           
             parser.commentParse();
         }
         
         else if (parser.cDataCheck())
         {
             // parse CDATA
-            
             parser.cDataParse();
         }
         
         else if (parser.endTagCheck())
         {
-            // parse end tag
-   
+            //parse end tag
             parser.endTagParse();
         }
         
         else if (parser.startTagCheck())
         {
-            // parse start tag
-        
+            //parse start tag
             parser.startTagParse();
             
         }
        
         else if (parser.endStartTagCheck())
         {
-            // end start tag
-         
+            //end start tag
             parser.endStartTag();
         }
         
         else if (parser.emptyElementCheck())
         {
-            // end empty element
+            //end empty element
             parser.emptyElement();
         }
         
         else if (parser.namespaceCheck())
         {
-            // parse namespace
+            //parse namespace
            
             parser.namespaceParse();
         }
         
         else if (parser.attCheck())
         {
-            // parse attribute
+            //parse attribute
             parser.attParse();
-            
         }
         
         else
         {
-             // parse characters
-       parser.charcterParse();
-            if (*parser.getpcur() != '&')
-                {
-                    std::string characters(parser.getpcur(), parser.getpc());
-                    count["loc"] += std::count(characters.begin(), characters.end(), '\n');
-                }
-            else
-                ++count["textsize"];
-       //adjust values, this if/else is for the sole purpose of decoupling
-    }
+        //parse characters
+            parser.charcterParse();
+        }
     }
     
     std::cout << "bytes: " << total << '\n';

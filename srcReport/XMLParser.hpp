@@ -8,10 +8,9 @@
 #ifndef XMLPARSER
 #define XMLPARSER
 
-class xmlparser
+class XMLParser
 {
 private:
-    //Private variables for use in functions
     int depth;
     bool intag;
     ssize_t numbytes;
@@ -24,70 +23,41 @@ private:
     std::string characters;
     std::string value;
     std::string uri;
-    std::function<void()> cData;
-    std::function<void()> local;
-    std::function<void()> attribute;
-    std::function<void()> loc;
-    std::function<void()> sourceChar;
+  
 
 public:
     
      //Constructor for calling the parser with std::functions as variables
-    xmlparser(std::function<void()>, std::function<void()>, std::function<void()>, std::function<void()>, std::function<void()>);
-
-     //Deconstructor
-    ~xmlparser();
+    XMLParser();
     
-    //Function for getting pc value
-    std::vector<char>::iterator getpc()
-    {
-        return pc;
-    }
-     
-    //This is an inline function so its best to keep it in hpp file to get the buffer
-    std::vector<char>getbuffer()
-    {
-        return buffer;
-    }
+   //deconstructor
+    ~XMLParser();
     
-    size_t getsize() { return characters.size();}
-  
-    //Function for getting the depth value
-    int getdepth()
-    {
-        return depth;
-    }
+    //unused function for now
+    virtual void XMLDeclaration(const std::string, const std::string, const std::string);
     
-    //Function for returning the numbytes value
-    ssize_t getNumbytes()
+    //function for counting the start tags
+    virtual void virtualStartTag(const std::string, const std::string, const std::string, const int);
     
-    {
-        return numbytes;
-    }
+    virtual void virtualEndTag(const std::string, const std::string, const std::string);
     
-    //Function for returning the local name
-    std::string getLocal_name()
-    {
-        return local_name;
-    }
+    //function for counting attributes
+    virtual void virtualAttributes(const std::string, const std::string, const std::string, const std::string);
     
-    //Function for returning the characters
-    std::string getCharacters()
-    {
-        return characters;
-    }
+    //unused function for now
+    virtual void XMLNamespace(const std::string, const std::string, const std::string);
     
-    //Function for returning the pcur
-   std::vector<char>::iterator getpcur()
-    {
-        return pcur;
-    }
+    //unused function for now
+    virtual void XMLComments(const std::string);
     
-    //Function for returning the value
-    std::string getvalue()
-    {
-        return value;
-    }
+    //function for counting the lines of code and source characters
+     virtual void virtualCData(const std::string);
+    
+    //function used for filling the buffer
+    virtual void virtualFillBuffer(const ssize_t);
+    
+    //parse characters
+    virtual void virtualCharacters(const std::string, const bool);
     
     //Function for checking if the conditions are met to fill the buffer
     bool bufferCheck();
@@ -118,6 +88,8 @@ public:
 
     //Function for checking if the conditions are met parse the attributes
     bool attCheck();
+
+    void handleXML();
 
     //Function for filling the buffer
     void fillTheBuffer();
@@ -151,6 +123,11 @@ public:
 
     //Function for parsing the end of start tags in the document
     void endStartTag();
+};
+
+class XMLParserHandler
+{
+    
 };
 #endif//XMLPARSER
 

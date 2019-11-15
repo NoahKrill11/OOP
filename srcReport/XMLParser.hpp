@@ -8,9 +8,42 @@
 #ifndef XMLPARSER
 #define XMLPARSER
 
-class XMLParser
+class XMLParserHandler
 {
+public:
+    //Function  used for overloading in a different project
+    virtual void XMLDeclaration(const std::string, const std::string, const std::string){}
+
+    //Function  used for overloading in a different project
+    virtual void virtualFillBuffer(const ssize_t){}
+
+    //Function  used for overloading in a different project
+    virtual void virtualCData(const std::string){}
+
+    //Function  used for overloading in a different project
+    virtual void virtualStartTag(const std::string, const std::string, const std::string, const int){}
+
+    //Function  used for overloading in a different project
+    virtual void virtualEndTag(const std::string, const std::string, const std::string){}
+
+    //Function  used for overloading in a different project
+    virtual void virtualAttributes(const std::string, const std::string , const std::string, const std::string){}
+
+    //Function  used for overloading in a different project
+    virtual void XMLComments(const std::string){}
+
+    //Function  used for overloading in a different project
+    virtual void XMLNamespace(const std::string, const std::string, const std::string){}
+
+    //Function  used for overloading in a different project
+    virtual void virtualCharacters(const std::string, const bool){}
+};
+
+class XMLParser:XMLParserHandler
+{
+    
 private:
+    XMLParserHandler& XMLHandler;
     int depth;
     bool intag;
     ssize_t numbytes;
@@ -26,39 +59,12 @@ private:
   
 
 public:
-    
-     //Constructor for calling the parser with std::functions as variables
-    XMLParser();
-    
-   //deconstructor
+    //Constructor for calling the parser with an XMLParserHandler as a parameter
+    XMLParser(XMLParserHandler &);
+      
+    //deconstructor
     ~XMLParser();
-    
-    //unused function for now
-    virtual void XMLDeclaration(const std::string, const std::string, const std::string);
-    
-    //function for counting the start tags
-    virtual void virtualStartTag(const std::string, const std::string, const std::string, const int);
-    
-    virtual void virtualEndTag(const std::string, const std::string, const std::string);
-    
-    //function for counting attributes
-    virtual void virtualAttributes(const std::string, const std::string, const std::string, const std::string);
-    
-    //unused function for now
-    virtual void XMLNamespace(const std::string, const std::string, const std::string);
-    
-    //unused function for now
-    virtual void XMLComments(const std::string);
-    
-    //function for counting the lines of code and source characters
-     virtual void virtualCData(const std::string);
-    
-    //function used for filling the buffer
-    virtual void virtualFillBuffer(const ssize_t);
-    
-    //parse characters
-    virtual void virtualCharacters(const std::string, const bool);
-    
+
     //Function for checking if the conditions are met to fill the buffer
     bool bufferCheck();
 
@@ -125,9 +131,6 @@ public:
     void endStartTag();
 };
 
-class XMLParserHandler
-{
-    
-};
+
 #endif//XMLPARSER
 

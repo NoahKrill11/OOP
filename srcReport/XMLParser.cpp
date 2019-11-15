@@ -14,7 +14,7 @@
  Constructor for calling the parser
  Standard functions and will be called later in the function if need be
 */
-XMLParser::XMLParser()
+XMLParser::XMLParser(XMLParserHandler &handler):XMLHandler(handler)
 {
     buffer.resize(16 * 1024);
     depth = 0;
@@ -22,25 +22,6 @@ XMLParser::XMLParser()
     numbytes = -1;
     pc = buffer.end();
 }
-//The next 10 functions are used for overloading in another class
-void XMLParser::XMLDeclaration(const std::string version, const std::string encoding, const std::string standalone){}
-
-void XMLParser::virtualFillBuffer(const ssize_t numbytes){}
-
-void XMLParser::virtualCData(const std::string characters){}
-
-void XMLParser::virtualStartTag(const std::string local_name, const std::string qname, const std::string prefix, const int depth){}
-
-void XMLParser::virtualEndTag(const std::string Local_name, const std::string qname, const std::string prefix){}
-
-void XMLParser::virtualAttributes(const std::string qname, const std::string local_name, const std::string prefix, const std::string value){}
-
-void XMLParser::XMLComments(const std::string content){}
-
-void XMLParser::XMLNamespace(const std::string prefix, const std::string name, const std::string uri){}
-
-void XMLParser::virtualCharacters(const std::string content, const bool isloc){}
-
 //Function for checking if the conditions are met to fill the buffer
 bool XMLParser::bufferCheck()
 {
@@ -188,12 +169,12 @@ void XMLParser::fillTheBuffer()
     
     numbytes += d;
     
-    //Resizes the buffer if the buffer is bigger then the numbytes
+    //Resizes the buffer if
     if (numbytes < buffer.size())
         buffer.resize(numbytes);
     
     pc = buffer.begin();
-    virtualFillBuffer(numbytes);
+    XMLHandler.virtualFillBuffer(numbytes);
 }
 
 //Function parses the declarations in the document
@@ -210,7 +191,7 @@ void XMLParser::declartionParse()
     */
     if (endpc == buffer.end())
         std::exit(1);
-    XMLDeclaration("1.0", "UTF-8", "no");
+    XMLHandler.XMLDeclaration("1.0", "UTF-8", "no");
 }
 
 //Function parses the comments in the document
@@ -231,7 +212,7 @@ void XMLParser::commentParse()
     pc = std::find_if_not(pc, buffer.end(), [] (char c) { return std::isspace(c); });
     
     std::string content;
-    XMLComments(content);
+    XMLHandler.XMLComments(content);
 }
 
 //Function parses the cdata in the document
@@ -254,7 +235,7 @@ void XMLParser::cDataParse()
     pc = std::next(endpc, strlen("]]>"));
     
     //calling on the the std::functions that was used in the constructor
-    virtualCData(characters);
+    XMLHandler.virtualCData(characters);
 }
 
 //Function parses the end tags in the document
@@ -289,7 +270,7 @@ void XMLParser::endTagParse()
     
     --depth;
     
-    virtualEndTag(local_name, qname, prefix);
+    XMLHandler.virtualEndTag(local_name, qname, prefix);
 }
 
 //Function parses start tags in the document
@@ -327,7 +308,7 @@ void XMLParser::startTagParse()
     intag = true;
     
     //calling on the the std::functions that was used in the constructor
-    virtualStartTag(local_name, qname, prefix, depth);
+    XMLHandler.virtualStartTag(local_name, qname, prefix, depth);
 }
 
 //Function parses the attributes in the document
@@ -384,7 +365,7 @@ void XMLParser::attParse()
     pc = std::find_if_not(pc, buffer.end(), [] (char c) { return std::isspace(c); });
     
     //calling on the the std::functions that was used in the constructor
-    virtualAttributes(qname, local_name, prefix, value);
+    XMLHandler.virtualAttributes(qname, local_name, prefix, value);
 }
 
 //Function parses the namespace in the document
@@ -452,7 +433,7 @@ void XMLParser::namespaceParse()
     pc = std::find_if_not(pc, buffer.end(), [] (char c) { return std::isspace(c); });
     
     std::string name;
-    XMLNamespace(prefix, name, uri);
+    XMLHandler.XMLNamespace(prefix, name, uri);
 }
 
 //Function parses the characters in the document
@@ -469,7 +450,7 @@ void XMLParser::charcterParse()
                 std::string characters(pcur,pc);
                 isloc=true;
                 //calling on the the std::functions that was used in the constructor
-                virtualCharacters(characters, isloc);
+                XMLHandler.virtualCharacters(characters, isloc);
                 return;
             }
         else
@@ -500,7 +481,7 @@ void XMLParser::charcterParse()
                 }
         
             //calling on the the std::functions that was used in the constructor
-            virtualCharacters(characters, isloc);
+            XMLHandler.virtualCharacters(characters, isloc);
         }
     }
 }

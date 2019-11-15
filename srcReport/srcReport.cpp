@@ -10,7 +10,7 @@ Produces a report that counts the number of statements, declarations, etc. of C+
 #include <vector>
 #include "XMLParser.hpp"
 #include <unordered_map>
-class srcReport : public XMLParser
+class srcReport : public XMLParserHandler
 {
     private:
         long total = 0;
@@ -42,7 +42,7 @@ class srcReport : public XMLParser
             else if (Local_name != "file")
                 ++countTags[Local_name];
         }
-    
+        
         //function for counting attributes
         void virtualAttributes(const std::string qname, const std::string local_name, const std::string prefix, const std::string value)
         {
@@ -58,8 +58,29 @@ class srcReport : public XMLParser
             ++textsize;
         }
     
-    public:
+        //function could be set up later but for now they do nothing
+        void virtualEndTag(const std::string Local_name, const std::string qname, const std::string prefix)
+        {
+        
+        }
     
+        //function could be set up later but for now they do nothing
+        void XMLComments(const std::string content)
+        {
+        
+        }
+        //function could be set up later but for now they do nothing
+        void XMLNamespace(const std::string prefix, const std::string name, const std::string uri)
+        {
+            
+        }
+        //function could be set up later but for now they do nothing
+        void XMLDeclaration(const std::string version, const std::string encoding, const std::string standalone)
+        {
+            
+        }
+    
+    public:
         //function for getting total
         const long getTotal()
         {
@@ -94,9 +115,9 @@ int main()
 {
 
     srcReport report;
-
-    report.handleXML();
-
+    XMLParser parser(report);
+    
+    parser.handleXML();
     std::cout << "bytes: " << report.getTotal() << '\n';
     std::cout << "files: " << report.getTags("file") << '\n';
     std::cout << "LOC: " << report.getLoc() << '\n';

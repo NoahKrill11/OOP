@@ -23,41 +23,18 @@ private:
     std::string characters;
     std::string value;
     std::string uri;
-  
+    std::function<void(const ssize_t)> parsetotal;
+    std::function<void(const std::string)> cData;
+    std::function<void(const std::string, const int)> local;
+    std::function<void(const std::string)> attribute;
+    std::function<void(const std::string)> loc;
+    std::function<void()> sourceChar;
 
 public:
     
      //Constructor for calling the parser with std::functions as variables
-    XMLParser();
-    
-   //deconstructor
-    ~XMLParser();
-    
-    //unused function for now
-    virtual void XMLDeclaration(const std::string, const std::string, const std::string);
-    
-    //function for counting the start tags
-    virtual void virtualStartTag(const std::string, const std::string, const std::string, const int);
-    
-    virtual void virtualEndTag(const std::string, const std::string, const std::string);
-    
-    //function for counting attributes
-    virtual void virtualAttributes(const std::string, const std::string, const std::string, const std::string);
-    
-    //unused function for now
-    virtual void XMLNamespace(const std::string, const std::string, const std::string);
-    
-    //unused function for now
-    virtual void XMLComments(const std::string);
-    
-    //function for counting the lines of code and source characters
-     virtual void virtualCData(const std::string);
-    
-    //function used for filling the buffer
-    virtual void virtualFillBuffer(const ssize_t);
-    
-    //parse characters
-    virtual void virtualCharacters(const std::string, const bool);
+    XMLParser(std::function<void(const ssize_t)>, std::function<void(const std::string)>, std::function<void(const std::string, const int)>,
+    std::function<void(const std::string)>, std::function<void(const std::string)>, std::function<void()>);
     
     //Function for checking if the conditions are met to fill the buffer
     bool bufferCheck();
@@ -88,9 +65,9 @@ public:
 
     //Function for checking if the conditions are met parse the attributes
     bool attCheck();
-
+    
     void handleXML();
-
+    
     //Function for filling the buffer
     void fillTheBuffer();
 
@@ -123,11 +100,6 @@ public:
 
     //Function for parsing the end of start tags in the document
     void endStartTag();
-};
-
-class XMLParserHandler
-{
-    
 };
 #endif//XMLPARSER
 

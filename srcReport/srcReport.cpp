@@ -10,75 +10,104 @@ Produces a report that counts the number of statements, declarations, etc. of C+
 #include <vector>
 #include "XMLParser.hpp"
 #include <unordered_map>
+class srcReport : public XMLParser
+{
+    private:
+        long total = 0;
+        int textsize = 0;
+        int loc = 0;
+        std::unordered_map<std::string, int> countTags;
+        std::unordered_map<std::string, int> countAttributes;
+    
+        //function for adding total number of bytes
+        void virtualFillBuffer(const ssize_t numbytes)
+        {
+            total+=numbytes;
+        }
+    
+        //function for counting the lines of code and source characters
+        void virtualCData(const std::string content)
+        {
+            textsize += content.size();
+            loc += std::count(content.begin(), content.end(), '\n');
+        }
+    
+        //function for counting the start tags
+        void virtualStartTag(const std::string Local_name, const std::string qname, const std::string prefix, const int depth)
+        {
+            //counting the local names
+            if (Local_name == "unit" && depth > 1)
+                ++countTags["file"];
+        
+            else if (Local_name != "file")
+                ++countTags[Local_name];
+        }
+    
+        //function for counting attributes
+        void virtualAttributes(const std::string qname, const std::string local_name, const std::string prefix, const std::string value)
+        {
+            ++countAttributes[value];
+        }
+        
+        //function for counting lines of code
+        void virtualCharacters(const std::string content, const bool isloc)
+        {
+            if (isloc==true)
+            loc += std::count(content.begin(), content.end(), '\n');
+            else
+            ++textsize;
+        }
+    
+    public:
+    
+        //function for getting total
+        const long getTotal()
+        {
+            return total;
+        }
+    
+        //function for getting textsize
+        const int getTextSize()
+        {
+            return textsize;
+        }
+    
+        //function for getting lines of code
+        const int getLoc()
+        {
+            return loc;
+        }
+        
+        //function for getting tagname
+        const int getTags(std::string tagname)
+        {
+            return countTags[tagname];
+        }
+        //function for getting attributes
+        const int getAttributes(std::string attname)
+        {
+            return countAttributes[attname];
+        }
+};
 
 int main()
 {
-    long total = 0;
-    int textsize = 0;
-    int loc = 0;
-    std::unordered_map<std::string, int> countTags;
-    std::unordered_map<std::string, int> countAttributes;
-    
-    /*
-    creating an object with the use of Lambdas
-    Lambdas are anonymous fuctions that will be called if the functions in the other files need them
-    They do all the parsing outside of srcreport while keeping the srcML varibles inside
-    */
-    XMLParser parser(
-    //creating a lambda function for the buffer
-    [&total](const ssize_t numbytes) -> void
-    {
-        total+=numbytes;
-    },
-    //lambda for c-data
-    [&textsize, &loc](const std::string characters) -> void
-    {
-        //counting the source characters and the lines of codes
-        textsize += characters.size();
-        loc += std::count(characters.begin(), characters.end(), '\n');
-    },
-    //lambda for  local_names
-    [&countTags](const std::string Local_name, const int depth) -> void
-    {
-    //counting the local names
-        if (Local_name == "unit" && depth > 1)
-            ++countTags["file"];
-        
-        else if (Local_name != "file")
-            ++countTags[Local_name];
-    },
-    //lambda for attributes
-    [&countAttributes](const std::string value) -> void
-    {
-        //counting the attributes names
-        ++countAttributes[value];
-    },
-     //lambda for lines of code
-    [&loc](const std::string characters) -> void
-    {
-        loc += std::count(characters.begin(), characters.end(), '\n');
-    },
-    //lambda for source characters 
-    [&textsize]() -> void
-    {
-        //counting the source characters
-        ++textsize;
-    }
-);
 
-    parser.handleXML();
+    srcReport report;
 
-    std::cout << "bytes: " << total << '\n';
-    std::cout << "files: " << countTags["file"] << '\n';
-    std::cout << "LOC: " << loc << '\n';
-    std::cout << "source characters: " << textsize << '\n';
-    std::cout << "classes: " << countTags["class"] << '\n';
-    std::cout << "functions: " << countTags["function"] << '\n';
-    std::cout << "declarations: " << countTags["decl"] << '\n';
-    std::cout << "expressions: " << countTags["expr"] << '\n';
-    std::cout << "comments: " << countTags["comment"] << '\n';
-    std::cout << "returns: " << countTags["return"] << '\n';
-    std::cout << "block comments "<< countAttributes["block"] <<'\n';
+    report.handleXML();
+
+    std::cout << "bytes: " << report.getTotal() << '\n';
+    std::cout << "files: " << report.getTags("file") << '\n';
+    std::cout << "LOC: " << report.getLoc() << '\n';
+    std::cout << "source characters: " << report.getTextSize() << '\n';
+    std::cout << "classes: " << report.getTags("class") << '\n';
+    std::cout << "functions: " << report.getTags("function") << '\n';
+    std::cout << "declarations: " << report.getTags("decl") << '\n';
+    std::cout << "expressions: " << report.getTags("expr") << '\n';
+    std::cout << "comments: " << report.getTags("comment") << '\n';
+    std::cout << "returns: " << report.getTags("return") << '\n';
+    std::cout << "block comments "<< report.getAttributes("block") <<'\n';
     return 0;
 }
 

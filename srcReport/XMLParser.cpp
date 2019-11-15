@@ -14,7 +14,7 @@
  Constructor for calling the parser
  Standard functions and will be called later in the function if need be
 */
-XMLParser::XMLParser(std::function<void(const ssize_t)> total, std::function<void(const std::string)>                          CDataCount, std::function<void(const std::string, const int)> localNameCount,                             std::function<void(const std::string)> attrCount, std::function<void(const                                std::string)>linesOfCode, std::function<void()> sourceCharCount) : parsetotal(total),                     cData(CDataCount), local(localNameCount), attribute(attrCount), loc(linesOfCode),                         sourceChar(sourceCharCount)
+XMLParser::XMLParser()
 {
     buffer.resize(16 * 1024);
     depth = 0;
@@ -22,6 +22,24 @@ XMLParser::XMLParser(std::function<void(const ssize_t)> total, std::function<voi
     numbytes = -1;
     pc = buffer.end();
 }
+//The next 10 functions are used for overloading in another class
+void XMLParser::XMLDeclaration(const std::string version, const std::string encoding, const std::string standalone){}
+
+void XMLParser::virtualFillBuffer(const ssize_t numbytes){}
+
+void XMLParser::virtualCData(const std::string characters){}
+
+void XMLParser::virtualStartTag(const std::string local_name, const std::string qname, const std::string prefix, const int depth){}
+
+void XMLParser::virtualEndTag(const std::string Local_name, const std::string qname, const std::string prefix){}
+
+void XMLParser::virtualAttributes(const std::string qname, const std::string local_name, const std::string prefix, const std::string value){}
+
+void XMLParser::XMLComments(const std::string content){}
+
+void XMLParser::XMLNamespace(const std::string prefix, const std::string name, const std::string uri){}
+
+void XMLParser::virtualCharacters(const std::string content, const bool isloc){}
 
 //Function for checking if the conditions are met to fill the buffer
 bool XMLParser::bufferCheck()
@@ -93,7 +111,6 @@ void XMLParser::handleXML()
         {
             // fill the buffer
             fillTheBuffer();
-            parsetotal(numbytes);
         }
 
         else if (declarationCheck())
@@ -176,6 +193,7 @@ void XMLParser::fillTheBuffer()
         buffer.resize(numbytes);
     
     pc = buffer.begin();
+    virtualFillBuffer(numbytes);
 }
 
 //Function parses the declarations in the document
@@ -192,6 +210,7 @@ void XMLParser::declartionParse()
     */
     if (endpc == buffer.end())
         std::exit(1);
+    XMLDeclaration("1.0", "UTF-8", "no");
 }
 
 //Function parses the comments in the document
@@ -210,6 +229,9 @@ void XMLParser::commentParse()
         std::exit(1);
     
     pc = std::find_if_not(pc, buffer.end(), [] (char c) { return std::isspace(c); });
+    
+    std::string content;
+    XMLComments(content);
 }
 
 //Function parses the cdata in the document
@@ -232,7 +254,7 @@ void XMLParser::cDataParse()
     pc = std::next(endpc, strlen("]]>"));
     
     //calling on the the std::functions that was used in the constructor
-    cData(characters);
+    virtualCData(characters);
 }
 
 //Function parses the end tags in the document
@@ -266,6 +288,8 @@ void XMLParser::endTagParse()
     pc = std::next(endpc);
     
     --depth;
+    
+    virtualEndTag(local_name, qname, prefix);
 }
 
 //Function parses start tags in the document
@@ -303,7 +327,7 @@ void XMLParser::startTagParse()
     intag = true;
     
     //calling on the the std::functions that was used in the constructor
-    local(local_name, depth);
+    virtualStartTag(local_name, qname, prefix, depth);
 }
 
 //Function parses the attributes in the document
@@ -360,7 +384,7 @@ void XMLParser::attParse()
     pc = std::find_if_not(pc, buffer.end(), [] (char c) { return std::isspace(c); });
     
     //calling on the the std::functions that was used in the constructor
-    attribute(value);
+    virtualAttributes(qname, local_name, prefix, value);
 }
 
 //Function parses the namespace in the document
@@ -426,11 +450,15 @@ void XMLParser::namespaceParse()
     
     pc = std::next(pvalueend);
     pc = std::find_if_not(pc, buffer.end(), [] (char c) { return std::isspace(c); });
+    
+    std::string name;
+    XMLNamespace(prefix, name, uri);
 }
 
 //Function parses the characters in the document
 void XMLParser::charcterParse()
 {
+    bool isloc = false;
     pcur = pc;
     pc = std::find_if(pc, buffer.end(), [](char c) { return c == '<' || c == '&'; });
     
@@ -439,10 +467,10 @@ void XMLParser::charcterParse()
         if (*pcur != '&')
             {
                 std::string characters(pcur,pc);
-            //calling on the the std::functions that was used in the constructor
-            loc(characters);
-                
-            return;
+                isloc=true;
+                //calling on the the std::functions that was used in the constructor
+                virtualCharacters(characters, isloc);
+                return;
             }
         else
         {
@@ -470,8 +498,9 @@ void XMLParser::charcterParse()
                     
                 std::advance(pc, 1);
                 }
+        
             //calling on the the std::functions that was used in the constructor
-            sourceChar();
+            virtualCharacters(characters, isloc);
         }
     }
 }
@@ -491,4 +520,8 @@ void XMLParser::endStartTag()
         
     intag=false;
     }
-
+//decontructor
+XMLParser::~XMLParser()
+    {
+    
+    }
